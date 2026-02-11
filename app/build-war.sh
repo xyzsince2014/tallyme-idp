@@ -8,20 +8,14 @@ fi
 echo "execute $(pwd)/$0"
 
 cleanUp() {
-  mvn --settings .mvn/settings.xml -P $1 clean test
+  mvn -P $1 clean test
   rm -rf ./tomcat/webapps
   mkdir -p ./tomcat/webapps
   echo "cleanUp() completed."
 }
 
-report() {
-  mvn help:effective-pom -Doutput=.mvn/effective-pom.xml
-  mvn help:effective-settings -Doutput=.mvn/effective-settings.xml
-  echo "report() completed."
-}
-
 build() {
-  mvn --settings .mvn/settings.xml -P $1 -DskipTests=true package
+  mvn -P $1 -DskipTests=true package
   echo "build() completed."
 }
 
@@ -38,7 +32,6 @@ for PROFILE in ${PROFILES[@]}; do
   fi
 
   cleanUp $1
-  report
   build $1
   deploy
 
