@@ -46,21 +46,20 @@ public class ClientCredentialsSerivce extends TokenService<CredentialsDto> {
   }
 
   /**
-   * generate tokens
+   * Generates tokens.
+   *
    * @param tokenValidationResultDto
    * @return GenerateTokensResponseDto
    */
   @Override
   @Transactional
-  public GenerateTokensResponseDto execute(TokenValidationResultDto<CredentialsDto> tokenValidationResultDto) throws Exception {
+  public GenerateTokensResponseDto execute(
+    TokenValidationResultDto<CredentialsDto> tokenValidationResultDto
+  ) throws Exception {
 
-    // the Client Credentials Flow should not have a user it's on behalf of
-    GenerateTokensResponseDto responseDto = this.tokenLogic.generateTokens(
-        tokenValidationResultDto.getClientId(),
-        null, tokenValidationResultDto.getPayload().getScopes(),
-        false,
-        null
-    );
+    // the Client Credentials Flow has no resource owner — no refresh token or ID token is issued
+    GenerateTokensResponseDto responseDto =
+      this.tokenLogic.generateAccessToken(tokenValidationResultDto.getClientId(), tokenValidationResultDto.getPayload().getScopes());
 
     return responseDto;
   }

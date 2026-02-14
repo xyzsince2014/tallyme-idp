@@ -12,24 +12,23 @@ import tokyomap.oauth.domain.entities.postgres.Usr;
 import tokyomap.oauth.domain.entities.redis.PreAuthoriseCache;
 import tokyomap.oauth.domain.entities.redis.ProAuthoriseCache;
 import tokyomap.oauth.domain.logics.RedisLogic;
-import tokyomap.oauth.domain.logics.TokenLogic;
-import tokyomap.oauth.dtos.GenerateTokensResponseDto;
-import tokyomap.oauth.dtos.TokenValidationResultDto;
 
 @Service
 public class ProAuthoriseService {
 
+  // todo: use global constants
+  private static final String RESPONSE_TYPE_AUTHORISATION_CODE = "code";
+
   private final RedisLogic redisLogic;
-  private final TokenLogic tokenLogic;
 
   @Autowired
-  public ProAuthoriseService(RedisLogic redisLogic, TokenLogic tokenLogic) {
+  public ProAuthoriseService(RedisLogic redisLogic) {
     this.redisLogic = redisLogic;
-    this.tokenLogic = tokenLogic;
   }
 
   /**
-   * execute authorisation for the authorisationForm given
+   * Executes authorisation for the given authorisationForm.
+   *
    * @param
    * @param authorisationForm
    * @return redirectUri
@@ -40,13 +39,9 @@ public class ProAuthoriseService {
     AuthenticationResult authenticationResult = this.authenticate(resourceOwner, authorisationForm);
 
     switch (authenticationResult.getAuthorisationRequest().getResponseType()) {
-      case "AUTHORISATION_CODE": { // for the Authorisation Code Flow
+      case RESPONSE_TYPE_AUTHORISATION_CODE: {
+        // Authorisation Code Flow
         URI redirectUri = this.issueCode(authenticationResult);
-        return redirectUri;
-      }
-      case "TOKEN": { // for the Implicit Flow
-        TokenValidationResultDto<ProAuthoriseCache> tokenValidationResultDto = this.execValidation(authenticationResult);
-        URI redirectUri = this.generateAccessToken(tokenValidationResultDto, authenticationResult.getAuthorisationRequest());
         return redirectUri;
       }
       default:
@@ -55,7 +50,8 @@ public class ProAuthoriseService {
   }
 
   /**
-   * authenticate the username and password, and fetch the preAuthoriseCache for the requestId
+   * Authenticates the user credential, and fetches the preAuthoriseCache for the requestId.
+   *
    * @param authorisationForm
    * @return AuthenticationResult
    */
@@ -79,7 +75,8 @@ public class ProAuthoriseService {
   }
 
   /**
-   * issue an Authorisation Code and cache the associated info
+   * Issues an Authorisation Code and caches the associated info.
+   *
    * @param authenticationResult
    * @return redirectUri
    */
@@ -101,54 +98,6 @@ public class ProAuthoriseService {
         .toUri();
 
     return redirectUri;
-  }
-
-  /**
-   * execute validation for the Implicit Code Flow
-   * @param authenticationResult
-   * @return TokenValidationResultDto<ProAuthoriseCache>
-   */
-  private TokenValidationResultDto<ProAuthoriseCache> execValidation(AuthenticationResult authenticationResult) {
-
-    String sub = authenticationResult.getResourceOwner().getSub();
-    String[] requestedScopes = authenticationResult.getScopesRequested();
-    PreAuthoriseCache preAuthoriseCache = authenticationResult.getAuthorisationRequest();
-
-    ProAuthoriseCache proAuthoriseCache = new ProAuthoriseCache(sub, requestedScopes, preAuthoriseCache);
-
-    return new TokenValidationResultDto(preAuthoriseCache.getClientId(), proAuthoriseCache);
-  }
-
-  /**
-   * generate an access token for a requests from a valid Browser Application Client
-   * set to be a protected function because of warning on `@Transactional`
-   * @return redirectUri
-   */
-  @Transactional
-  protected URI generateAccessToken(TokenValidationResultDto<ProAuthoriseCache> tokenValidationResultDto, PreAuthoriseCache preAuthoriseCache) {
-
-    try {
-      GenerateTokensResponseDto responseDto = this.tokenLogic.generateTokens(
-          tokenValidationResultDto.getClientId(), tokenValidationResultDto.getPayload().getSub(),
-          tokenValidationResultDto.getPayload().getScopeRequested(), true,
-          tokenValidationResultDto.getPayload().getPreAuthoriseCache().getNonce()
-      );
-
-      String fragment = "accessToken=" + responseDto.getAccessToken() + "&idToken=" + responseDto.getIdToken()
-          + "&state=" + preAuthoriseCache.getState() + "&scopes=" + String.join(" ", preAuthoriseCache.getScopes())
-          + "&nonce=" + preAuthoriseCache.getNonce();
-
-      URI redirectUri = UriComponentsBuilder
-          .fromUriString(preAuthoriseCache.getRedirectUri())
-          .fragment(fragment)
-          .build()
-          .toUri();
-
-      return redirectUri;
-
-    } catch (Exception e) {
-      throw new InvalidProAuthoriseException("failed to generate access token, " + e);
-    }
   }
 
   private class AuthenticationResult {

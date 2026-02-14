@@ -1,38 +1,34 @@
 package tokyomap.oauth.dtos;
 
 import java.io.Serializable;
-import javax.annotation.Nullable;
 
 public class RevokeRequestDto implements Serializable {
 
   private static final long serialVersionUID = 4257687656585158577L;
 
-  @Nullable
-  private String accessToken;
+  private String token;
 
-  @Nullable
-  private String refreshToken;
+  private String tokenTypeHint;
 
-  @Nullable
-  public String getAccessToken() {
-    return accessToken;
+
+  public String getToken() {
+    return token;
   }
 
-  public void setAccessToken(@Nullable String accessToken) {
-    this.accessToken = accessToken;
+  public void setToken(String token) {
+    this.token = token;
   }
 
-  @Nullable
-  public String getRefreshToken() {
-    return refreshToken;
+  public String getTokenTypeHint() {
+    return tokenTypeHint;
   }
 
-  public void setRefreshToken(@Nullable String refreshToken) {
-    this.refreshToken = refreshToken;
+  public void setTokenTypeHint(String tokenTypeHint) {
+    this.tokenTypeHint = tokenTypeHint;
   }
 
   @Override
   public String toString() {
-    return "accessToken = " + this.accessToken + ", refreshToken = " + this.refreshToken;
+    return "token = " + this.token + ", tokenTypeHint = " + this.tokenTypeHint;
   }
 }

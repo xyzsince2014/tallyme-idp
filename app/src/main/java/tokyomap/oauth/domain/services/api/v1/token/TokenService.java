@@ -39,17 +39,20 @@ public abstract class TokenService<T> {
   public abstract GenerateTokensResponseDto execute(TokenValidationResultDto<T> tokenValidationResultDto) throws Exception;
 
   /**
-   * validate client
+   * Validates the client.
+   *
    * @param requestDto
    * @param authorization
    * @return CredentialsDto
    */
-  protected CredentialsDto validateClient(GenerateTokensRequestDto requestDto, String authorization) throws ApiException {
+  protected CredentialsDto validateClient(
+    GenerateTokensRequestDto requestDto, String authorization
+  ) throws ApiException {
 
     String clientId = "";
     String clientSecret = "";
 
-    // fetch clientId & clientSecret from the authorization header or the post params, then check them
+    // fetch clientId & clientSecret from the authorization header or the post params, then check them.
     CredentialsDto credentialsDto = this.decorder.decodeCredentials(authorization);
 
     clientId = credentialsDto.getId();

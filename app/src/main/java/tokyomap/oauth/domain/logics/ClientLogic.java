@@ -17,7 +17,8 @@ public class ClientLogic {
   }
 
   /**
-   * register the client given
+   * Registers the client given.
+   *
    * @param client
    * @return clientRegistered
    */
@@ -27,7 +28,8 @@ public class ClientLogic {
   }
 
   /**
-   * get the client for the given sub
+   * Gets the client for the given sub.
+   *
    * @param clientId
    * @return Optional<Client>
    */
@@ -37,7 +39,8 @@ public class ClientLogic {
   }
 
   /**
-   * unregister the client for the given clientId
+   * Unregisters the client for the given clientId.
+   *
    * @param clientId
    */
   public void unregisterClient(String clientId) {

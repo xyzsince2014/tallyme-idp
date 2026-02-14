@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import tokyomap.oauth.domain.entities.postgres.Client;
 import tokyomap.oauth.domain.services.api.v1.ApiException;
 import tokyomap.oauth.domain.services.api.v1.register.CheckRegistrationAccessTokenService;
+import tokyomap.oauth.domain.services.api.v1.register.CheckRegistrationBasicAuthService;
 import tokyomap.oauth.domain.services.api.v1.register.RegisterClientService;
 import tokyomap.oauth.domain.services.api.v1.register.UnregisterClientService;
 import tokyomap.oauth.domain.services.api.v1.register.UpdateClientService;
@@ -30,6 +31,7 @@ import tokyomap.oauth.dtos.UpdateClientResponseDto;
 public class RegisterRestController {
 
   private final RegisterClientService registerClientService;
+  private final CheckRegistrationBasicAuthService checkRegistrationBasicAuthService;
   private final CheckRegistrationAccessTokenService checkRegistrationAccessTokenService;
   private final UpdateClientService updateClientService;
   private final UnregisterClientService unregisterClientService;
@@ -37,24 +39,60 @@ public class RegisterRestController {
   @Autowired
   public RegisterRestController(
       RegisterClientService registerClientService,
+      CheckRegistrationBasicAuthService checkRegistrationBasicAuthService,
       CheckRegistrationAccessTokenService checkRegistrationAccessTokenService,
       UpdateClientService updateClientService,
       UnregisterClientService unregisterClientService
   ) {
     this.registerClientService = registerClientService;
+    this.checkRegistrationBasicAuthService = checkRegistrationBasicAuthService;
     this.checkRegistrationAccessTokenService = checkRegistrationAccessTokenService;
     this.updateClientService = updateClientService;
     this.unregisterClientService = unregisterClientService;
   }
 
   /**
-   * get a registered client
+   * Registers the given client.
+   *
+   * @param requestDto
+   * @return RegisterClientResponseDto
+   */
+  @RequestMapping(method = RequestMethod.POST, headers = {"Accept=application/json", "Content-Type=application/json"})
+  public ResponseEntity<RegisterClientResponseDto> registerClient(
+    @RequestHeader("Authorization") String authorization,
+    @RequestBody RegisterClientRequestDto requestDto
+  ) {
+    try {
+      // validate the Basic Auth header
+      this.checkRegistrationBasicAuthService.execute(authorization);
+
+      // client registration
+      ClientValidationResultDto resultDto = this.registerClientService.execValidation(requestDto.getClient());
+      Client clientRegistered = this.registerClientService.execute(requestDto.getClient(), resultDto);
+      ResponseClientDto responseClientDto = this.convertClientToResponseClientDto(clientRegistered);
+      return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterClientResponseDto(responseClientDto));
+
+    } catch (ApiException e) {
+      RegisterClientResponseDto responseDto = new RegisterClientResponseDto(e.getErrorMessage());
+      return ResponseEntity.status(e.getStatusCode()).body(responseDto);
+
+    } catch (Exception e) {
+      return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Returns the registered client.
+   *
    * @param clientId
    * @param authorization
    * @return ReadClientResponseDto
    */
   @RequestMapping(path = "/{clientId}", method = RequestMethod.GET, headers = "Accept=application/json")
-  public ResponseEntity<ReadClientResponseDto> readClient(@PathVariable String clientId, @RequestHeader("Authorization") String authorization) {
+  public ResponseEntity<ReadClientResponseDto> readClient(
+    @PathVariable String clientId,
+    @RequestHeader("Authorization") String authorization
+  ) {
     try {
       ResponseClientDto responseClientDto = this.checkAccessTokenRegistration(clientId, authorization);
       return ResponseEntity.status(HttpStatus.OK).body(new ReadClientResponseDto(responseClientDto));
@@ -68,7 +106,8 @@ public class RegisterRestController {
 }
 
   /**
-   * update the registered client
+   * Updates the registered client.
+   *
    * @param clientId
    * @param authorization
    * @param requestDto
@@ -87,21 +126,8 @@ public class RegisterRestController {
       String clientNameToUpdate = this.updateClientService.execAdditionalValidation(requestDto.getClient(), responseClientDto);
       Client clientUpdated = this.updateClientService.execute(clientNameToUpdate, validationResultDto, responseClientDto);
 
-      responseClientDto.setClientId(clientUpdated.getClientId());
-      responseClientDto.setClientSecret(clientUpdated.getClientSecret());
-      responseClientDto.setClientName(clientUpdated.getClientName());
-      responseClientDto.setClientUri(clientUpdated.getClientUri());
-      responseClientDto.setRedirectUris(clientUpdated.getRedirectUris().split(" "));
-      responseClientDto.setGrantTypes(clientUpdated.getGrantTypes().split(" "));
-      responseClientDto.setResponseTypes(clientUpdated.getResponseTypes().split(" "));
-      responseClientDto.setTokenEndpointAuthMethod(clientUpdated.getTokenEndpointAuthMethod());
-      responseClientDto.setScopes(clientUpdated.getScopes().split(" "));
-      responseClientDto.setRegistrationAccessToken(clientUpdated.getRegistrationAccessToken());
-      responseClientDto.setRegistrationClientUri(clientUpdated.getRegistrationClientUri());
-      responseClientDto.setCreatedAt(clientUpdated.getCreatedAt());
-      responseClientDto.setExpiresAt(clientUpdated.getExpiresAt());
-
-      return ResponseEntity.status(HttpStatus.OK).body(new UpdateClientResponseDto(responseClientDto));
+      ResponseClientDto updatedResponseClientDto = this.convertClientToResponseClientDto(clientUpdated);
+      return ResponseEntity.status(HttpStatus.OK).body(new UpdateClientResponseDto(updatedResponseClientDto));
 
     } catch (ApiException e) {
       return ResponseEntity.status(e.getStatusCode()).body(new UpdateClientResponseDto(e.getErrorMessage()));
@@ -112,13 +138,18 @@ public class RegisterRestController {
   }
 
   /**
-   * unregister the client for the given clientId
+   * Unregisters the client for the given clientId.
+   *
    * @param clientId
    * @param authorization
    */
   @RequestMapping(path = "/{clientId}", method = RequestMethod.DELETE, headers = "Accept=application/json")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void unregisterClient(@PathVariable String clientId, @RequestHeader("Authorization") String authorization, @RequestBody UnregisterClientRequestDto requestDto) {
+  public void unregisterClient(
+    @PathVariable String clientId,
+    @RequestHeader("Authorization") String authorization,
+    @RequestBody UnregisterClientRequestDto requestDto
+  ) {
     try {
       this.checkAccessTokenRegistration(clientId, authorization);
       this.unregisterClientService.execute(clientId, requestDto.getAccessToken(), requestDto.getRefreshToken());
@@ -128,7 +159,8 @@ public class RegisterRestController {
   }
 
   /**
-   * check the given registration access token
+   * Checks the given clientId and registration access token.
+   *
    * @param clientId
    * @param authorization
    * @return ResponseClientDto
@@ -139,30 +171,8 @@ public class RegisterRestController {
   }
 
   /**
-   * register the given client
-   * @param requestDto
-   * @return RegisterClientResponseDto
-   */
-  @RequestMapping(method = RequestMethod.POST, headers = {"Accept=application/json", "Content-Type=application/json"})
-  public ResponseEntity<RegisterClientResponseDto> registerClient(@RequestBody RegisterClientRequestDto requestDto) {
-
-    try {
-      ClientValidationResultDto resultDto = this.registerClientService.execValidation(requestDto.getClient());
-      Client clientRegistered = this.registerClientService.execute(requestDto.getClient(), resultDto);
-      ResponseClientDto responseClientDto = this.convertClientToResponseClientDto(clientRegistered);
-      return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterClientResponseDto(responseClientDto));
-
-    } catch (ApiException e) {
-      RegisterClientResponseDto responseDto = new RegisterClientResponseDto(e.getErrorMessage());
-      return ResponseEntity.status(e.getStatusCode()).body(responseDto);
-
-    } catch (Exception e) {
-      return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  /**
-   * convert Client to ResponseClientDto
+   * Converts Client to ResponseClientDto.
+   *
    * @param client
    * @return ResponseClientDto
    */

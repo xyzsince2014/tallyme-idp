@@ -39,29 +39,35 @@ public class AuthoriseController {
   }
 
   /**
-   * validate the authorisation request, and return the authorisation page
+   * Validates the authorisation request, and return the authorisation page.
+   *
    * @param model
    * @param queryParams
-   * @return String
+   * @return String the html's name to render
    */
   @RequestMapping(method = RequestMethod.GET)
   public String preAuthorise(Model model, @RequestParam Map<String, String> queryParams) {
 
     try {
       PreAuthoriseCache preAuthoriseCache = new PreAuthoriseCache(
-          queryParams.get("responseType"), queryParams.get("scopes").split(" "),
-          queryParams.get("clientId"), queryParams.get("redirectUri"), queryParams.get("state"), queryParams.get("codeChallenge"),
-          queryParams.get("codeChallengeMethod"), queryParams.get("nonce")
+        queryParams.get("responseType"),
+        queryParams.get("scopes").split(" "),
+        queryParams.get("clientId"),
+        queryParams.get("redirectUri"),
+        queryParams.get("state"),
+        queryParams.get("codeChallenge"),
+        queryParams.get("codeChallengeMethod"),
+        queryParams.get("nonce")
       );
 
-      // todo: use regex
+      // auth code flow requires redirect_uri
       if (preAuthoriseCache.getRedirectUri() == null || preAuthoriseCache.getRedirectUri().equals("")) {
         return "error";
       }
 
       PreAuthoriseResponseDto responseDto = this.preAuthoriseService.execute(preAuthoriseCache);
       model.addAttribute("dto", responseDto);
-      return "authorise"; // todo: separate authentication from authorisation, use WebSecurityConfigurerAdapter ?
+      return "authorise";
 
     } catch (NullPointerException e) {
       return "error";
@@ -73,7 +79,8 @@ public class AuthoriseController {
   }
 
   /**
-   * authorise requests from authorise.html, issue an Authorisation Code, and redirect to callback endpoints
+   * Authorises a request from authorise.html, issues an Authorisation Code, and redirects to the callback endpoint of the RP.
+   *
    * @param authorisationForm
    * @return String
    */
@@ -87,6 +94,9 @@ public class AuthoriseController {
     try {
       Usr resourceOwner = resourceOwnerDetails.getResourceOwner();
       URI redirectUri = this.proAuthoriseService.execute(resourceOwner, authorisationForm);
+
+      // Spring MVC intentionally responds 302, which discards the request body containing the resource owner's credentials before redirecting,
+      // while 307 preserves and re-sends the request body to the redirect_uri, which would leak the credentials to the client.
       return "redirect:" + redirectUri.toString();
 
     } catch (InvalidProAuthoriseException e) {

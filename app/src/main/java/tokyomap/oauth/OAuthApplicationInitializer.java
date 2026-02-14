@@ -27,7 +27,7 @@ public class OAuthApplicationInitializer extends AbstractHttpSessionApplicationI
    * @throws ServletException
    */
   @Override
-  public void onStartup(ServletContext servletContext) throws ServletException {
+  public void onStartup(ServletContext servletContext) {
 
     super.onStartup(servletContext);
 

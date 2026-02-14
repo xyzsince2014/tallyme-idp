@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Mermaid Demo</title>
+  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+<section>
+  <h3> RESTful protocol extension to OAuth Dynamic Client Registration</h3>
+  <div>Read & Delete</div>
+  <div class="mermaid">
+    sequenceDiagram
+    autonumber
+
+    actor user as User Agent (Resource Owner)
+    participant admin as Admin
+    participant auth as RS
+
+    user->>admin: GET /client/{clientId}
+    admin->>admin: fetch from t_admin_client
+    note right of admin: registration_access_token,<br>registration_client_uri
+    admin->>auth: GET /api/v1/register/{clientId} (registration_client_uri)<br>+ registrationAccessToken in Authorization header
+    auth->>auth: checkAccessTokenRegistration()
+    auth-->>admin: 200 OK + ReadClientResponseDto
+    admin-->>user: form + client info
+
+    user->>user: submit delete
+
+    user->>admin: DELETE /client/{clientId}
+    admin->>admin: fetch from t_admin_client
+    note right of admin: registration_access_token,<br>registration_client_uri
+
+    admin->>auth: DELETE /register/{clientId}<br>+ registrationAccessToken in Authorization header<br> + UnregisterClientRequestDto
+    auth->>auth: checkAccessTokenRegistration()
+    auth->>auth: unregister client
+    auth-->>admin: 204 No Content
+    admin->>admin: nullify stored tokens, state, scopes, codeVerifier
+    admin-->>user: 200 OK + index.html
+</div>
+</section>

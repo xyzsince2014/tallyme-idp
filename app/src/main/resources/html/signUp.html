@@ -20,6 +20,9 @@
   <div class="container">
     <section class="jumbotron">
       <h2>Sign Up</h2>
+      <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <p th:text="${errorMessage}"></p>
+      </div>
       <form th:object="${signUpForm}" th:action="@{{domain}/auth/sign-up(domain=${@environment.getProperty('domain.web')})}" method="POST" class="form" style="display: inline-block">
         <input id="email" name="email" placeholder="email" th:field="*{email}" type="email" required/>
         <input id="password" name="password" placeholder="password" th:field="*{password}" type="password" required/>

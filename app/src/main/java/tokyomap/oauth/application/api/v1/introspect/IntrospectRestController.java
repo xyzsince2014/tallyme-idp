@@ -24,11 +24,13 @@ public class IntrospectRestController {
   }
 
   @RequestMapping(method = RequestMethod.POST, headers = "Content-Type=application/x-www-form-urlencoded;charset=utf-8")
-  public ResponseEntity<IntrospectResponseDto> introspect(RequestIntrospectDto requestDto, @RequestHeader("Authorization") String authorization) {
+  public ResponseEntity<IntrospectResponseDto> introspect(
+    RequestIntrospectDto requestDto, @RequestHeader("Authorization") String authorization
+  ) {
 
     try {
-      Boolean isActive = this.introspectService.execute(requestDto.getToken(), authorization);
-      return ResponseEntity.status(HttpStatus.OK).body(new IntrospectResponseDto(isActive));
+      IntrospectResponseDto responseDto = this.introspectService.execute(requestDto.getToken(), authorization);
+      return ResponseEntity.status(HttpStatus.OK).body(responseDto);
 
     } catch (ApiException e) {
       IntrospectResponseDto responseDto = new IntrospectResponseDto(e.getErrorMessage(), false);

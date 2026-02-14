@@ -40,4 +40,13 @@ public class RedisLogic {
     this.proAuthoriseCacheRedisTemplate.opsForValue().set(key, proAuthoriseCache);
     this.proAuthoriseCacheRedisTemplate.expire(key, CODE_LIFETIME, TimeUnit.MINUTES);
   }
+
+  /**
+   * Deletes the ProAuthoriseCache for the given code.
+   *
+   * @param code
+   */
+  public void deleteProAuthoriseCache(String code) {
+    this.proAuthoriseCacheRedisTemplate.delete(code);
+  }
 }

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Authorisation Code Flow</title>
+    <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+<section>
+  <h3>The OAuth Authorization Code Flow + PKCE</h3>
+<div class="mermaid">
+sequenceDiagram
+autonumber
+
+actor user as User Agent
+participant rp as RP
+participant auth as AS
+participant res as RS
+
+user->>rp: GET /authorise
+rp->>rp: nullify accessToken and state
+rp->>rp: generate and store state and codeVerifier
+rp-->>user: 302 Found
+user->>auth: GET /authorise?queryParams
+note over user, auth: query params are<br>responseType="authorization_code", scopes="foo boo", client_id, redirectUri, state, codeChallenge and codeChallengeMethod="SHA256"
+auth->>auth: find client, validate query params
+auth->>auth: generate requestId, cache query params
+auth-->>user: 200 OK + autorise.html
+
+note over user: push "authorise"
+note right of user: if "reject" ?
+user->>auth: POST /authorise + ProAuthoriseRequestDto
+auth->>auth: find usr, authenticate
+auth->>auth: issue code, create redirect URI
+auth-->>user: 302 to redirect URI with query params
+note over user, auth: query params are code and state
+user->>rp: GET /callback?queryParams
+note over user, rp: query params are code and state
+rp->>rp: check state
+rp->>auth: POST /token<br>client_id and client_secret in Authorization header<br>+ GenerateTokensRequestDto<br>(grantType: "authorization_code", code, redirectUri, codeVerifier)
+auth->>auth: execute validation
+auth->>auth: generate access, refresh and id tokens
+auth-->>rp: 200 OK + GenerateTokensResponseDto
+rp->>rp: store tokens and scopes
+rp->>rp: verify id token
+rp->>res: GET /userinfo + access token in Authorization header
+res->>auth: POST /introspect<br>+ resourceId and resourceSecret in Authorization header<br>+ RequestIntrospectDto
+auth->>auth: validate resource, find access token
+auth-->>res: 200 OK + RequestIntrospectDto
+res->>res: check if openid is in scopes of token
+res->>res: get user by sub of token
+res->>res: create userInfo according to scopes of token
+res-->>rp: 200 OK + userInfo
+rp->>user: 200 OK + index.html with userInfo
+</div>
+</section>
+</body>
+</html>
+<script>
+    mermaid.initialize({
+        startOnLoad: true
+    });
+</script>

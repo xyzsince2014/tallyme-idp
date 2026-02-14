@@ -1,6 +1,7 @@
 package tokyomap.oauth.domain.services.api.v1.register;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,9 @@ import tokyomap.oauth.dtos.ResponseClientDto;
 @Service
 public class UpdateClientService extends RegisterService {
 
+  // todo: use global constants
+  private static final String TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC = "client_secret_basic";
+
   private final ClientLogic clientLogic;
 
   @Autowired
@@ -23,7 +27,31 @@ public class UpdateClientService extends RegisterService {
   }
 
   /**
-   * execute additional validation
+   * Overrides execValidation() to only validate fields relevant to an update.
+   * client_uri, redirect_uris and scopes are intentionally excluded
+   *   — the update flow keeps those existing values from the registered client and does not update them.
+   *
+   * @param requestClientDto
+   * @return ClientValidationResultDto
+   * @throws ApiException
+   */
+  @Override
+  public ClientValidationResultDto execValidation(RequestClientDto requestClientDto) throws ApiException {
+    if (requestClientDto.getClientName() == null || requestClientDto.getClientName().trim().isEmpty()) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Client Name.");
+    }
+
+    String tokenEndpointAuthMethod = Arrays.stream(TOKEN_ENDPOINT_AUTH_METHODS)
+        .filter(m -> m.equals(requestClientDto.getTokenEndpointAuthMethod() == null ? TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC : requestClientDto.getTokenEndpointAuthMethod()))
+        .findFirst()
+        .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid tokenEndpointAuthMethod."));
+
+    return this.validateAndResolveGrantAndResponseTypes(requestClientDto, tokenEndpointAuthMethod);
+  }
+
+  /**
+   * Executes additional validation.
+   *
    * @param requestClientDto
    * @param responseClientDto
    * @return clientNameToUpdate
@@ -33,32 +61,49 @@ public class UpdateClientService extends RegisterService {
     if (!requestClientDto.getClientId().equals(responseClientDto.getClientId())) {
       throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid ClientId");
     }
-    if(requestClientDto.getClientSecret() != null && !requestClientDto.getClientSecret().equals(responseClientDto.getClientSecret())) {
+    if (requestClientDto.getClientSecret() != null && !requestClientDto.getClientSecret().equals(responseClientDto.getClientSecret())) {
       throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid Client Secret");
     }
     return requestClientDto.getClientName();
   }
 
   /**
-   * update the registered client
+   * Updates the registered client.
+   *
    * @param clientNameToUpdate
    * @param validationResultDto
    * @return clientUpdated
    * @throws Exception
    */
-  public Client execute(String clientNameToUpdate, ClientValidationResultDto validationResultDto, ResponseClientDto responseClientDto) throws Exception {
+  public Client execute(
+    String clientNameToUpdate, ClientValidationResultDto validationResultDto, ResponseClientDto responseClientDto
+  ) throws Exception {
+    Client clientToBeUpdated = this.buildClient(clientNameToUpdate, validationResultDto, responseClientDto);
+    return this.clientLogic.registerClient(clientToBeUpdated);
+  }
 
+  /**
+   * Builds the Client entity by merging the validated values from validationResultDto
+   * with the immutable fields kept from the registered client via responseClientDto.
+   *
+   * @param clientNameToUpdate
+   * @param validationResultDto
+   * @param responseClientDto
+   * @return Client
+   */
+  private Client buildClient(
+    String clientNameToUpdate, ClientValidationResultDto validationResultDto, ResponseClientDto responseClientDto
+  ) {
     LocalDateTime now = LocalDateTime.now();
-
-    Client clientToBeUpdated = new Client(
+    return new Client(
         responseClientDto.getClientId(),
         responseClientDto.getClientSecret(),
         clientNameToUpdate,
-        validationResultDto.getTokenEndpointAuthMethod() != null ? validationResultDto.getTokenEndpointAuthMethod() : responseClientDto.getTokenEndpointAuthMethod(),
+        validationResultDto.getTokenEndpointAuthMethod(),
         responseClientDto.getClientUri(),
         String.join(" ", responseClientDto.getRedirectUris()),
-        validationResultDto.getGrantTypes() != null ? String.join(" ", validationResultDto.getGrantTypes()) : String.join(" ", responseClientDto.getGrantTypes()),
-        validationResultDto.getResponseTypes() != null ? String.join(" ", validationResultDto.getResponseTypes()) : String.join(" ", responseClientDto.getResponseTypes()),
+        String.join(" ", validationResultDto.getGrantTypes()),
+        String.join(" ", validationResultDto.getResponseTypes()),
         String.join(" ", responseClientDto.getScopes()),
         RandomStringUtils.random(8, true, true),
         responseClientDto.getRegistrationClientUri(),
@@ -66,9 +111,5 @@ public class UpdateClientService extends RegisterService {
         responseClientDto.getCreatedAt(),
         now
     );
-
-    Client clientUpdated = this.clientLogic.registerClient(clientToBeUpdated);
-
-    return clientUpdated;
   }
 }

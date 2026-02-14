@@ -9,6 +9,9 @@ import tokyomap.oauth.domain.logics.TokenLogic;
 @Service
 public class UnregisterClientService {
 
+  private static final String TOKEN_TYPE_HINT_ACCESS_TOKEN = "access_token";
+  private static final String TOKEN_TYPE_HINT_REFRESH_TOKEN = "refresh_token";
+
   private final TokenLogic tokenLogic;
   private final ClientLogic clientLogic;
 
@@ -19,7 +22,8 @@ public class UnregisterClientService {
   }
 
   /**
-   * unregister the client and its tokens fot the given clientId
+   * Unregisters the client and its tokens fot the given clientId.
+   *
    * @param clientId
    * @param accessToken
    * @param refreshToken
@@ -27,6 +31,7 @@ public class UnregisterClientService {
   @Transactional
   public void execute(String clientId, String accessToken, String refreshToken) {
     this.clientLogic.unregisterClient(clientId);
-    this.tokenLogic.revokeTokens(accessToken, refreshToken);
+    this.tokenLogic.revokeToken(accessToken, TOKEN_TYPE_HINT_ACCESS_TOKEN);
+    this.tokenLogic.revokeToken(accessToken, TOKEN_TYPE_HINT_REFRESH_TOKEN);
   }
 }

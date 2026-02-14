@@ -24,7 +24,8 @@ public class PreAuthoriseService {
   }
 
   /**
-   * validate the given preAuthoriseCache, and cache it if valid
+   * Validates the given preAuthoriseCache, and cache it if valid.
+   *
    * @param preAuthoriseCache
    * @return PreAuthoriseResponseDto
    * @exception throws Exception if request is invalid or something wrong takes place
@@ -37,7 +38,8 @@ public class PreAuthoriseService {
   }
 
   /**
-   * validate the preAuthoriseCache
+   * Validates the preAuthoriseCache.
+   *
    * @param preAuthoriseCache
    * @return ValidationResult
    */
@@ -45,12 +47,14 @@ public class PreAuthoriseService {
 
     Client client = this.clientLogic.getClientByClientId(preAuthoriseCache.getClientId());
 
+    // todo: make a logging aspect for Exceptions thrown
     if(client == null) {
-      // todo: make a logging aspect for Exceptions thrown
       throw new InvalidPreAuthoriseException("No Matching Client", client.getClientUri());
     }
 
-    if(client.getRedirectUris().indexOf(preAuthoriseCache.getRedirectUri()) == -1) {
+    // RFC 6749 §4.1.2: redirect_uri must exactly match one of the registered redirect_uris
+    // — substring match is insufficient as it is vulnerable to open redirect (e.g. attacker embeds the registered uri as a query param)
+    if (!Arrays.asList(client.getRedirectUris().split(" ")).contains(preAuthoriseCache.getRedirectUri())) {
       throw new InvalidPreAuthoriseException("Invalid Redirect URI", client.getClientUri());
     }
 

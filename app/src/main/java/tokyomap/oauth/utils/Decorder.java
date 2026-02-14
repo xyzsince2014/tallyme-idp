@@ -18,7 +18,8 @@ public class Decorder {
   }
 
   /**
-   * decode an authorization header to credentials
+   * Decodes an authorization header to credentials.
+   *
    * @param authorization
    * @return CredentialsDto
    */

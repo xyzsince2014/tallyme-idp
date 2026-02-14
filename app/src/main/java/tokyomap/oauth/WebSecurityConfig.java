@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import tokyomap.oauth.domain.services.authenticate.AuthenticateService;
 
 @Configuration
@@ -36,6 +37,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter { // todo: u
   @Override
   protected void configure(HttpSecurity http) throws Exception {
 
+    // Referrer-Policy: no-referrer, which prevents the `code` issued by the AS never from being leaked in the Referrer header.
+    http.headers()
+      .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER);
+
     http.authorizeRequests()
         .antMatchers("/css/**", "/img/**", "/js/**").permitAll()
         .antMatchers("/api/**").permitAll()
@@ -47,7 +52,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter { // todo: u
         .loginProcessingUrl("/authenticate")
         .usernameParameter("email")
         .passwordParameter("password")
-        .defaultSuccessUrl(this.domain + "/api/auth/authorise") // todo: redirect to the URI originally requested
+        .defaultSuccessUrl(this.domain + "/api/auth/authorise")
         .failureUrl("/authenticate?error=true");
 
     http.logout()
@@ -55,12 +60,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter { // todo: u
         .deleteCookies("JSESSIONID");
 
     http.sessionManagement()
-        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-        .sessionFixation().none();
-        // todo: .sessionFixation().newSession() // renew session after sign in in order to prevent https://www.ipa.go.jp/security/awareness/vendor/programmingv2/contents/305.html
-        // todo: .maximumSessions(1).maxSessionsPreventsLogin(false);
+      .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+      .sessionFixation().newSession(); // renew session id whenever the user signs in
 
-    http.csrf().disable();
+    // whitelist APIs which are requested with tokens or client credentials
+    http.csrf().ignoringAntMatchers("/api/v1/**");
   }
 
   /**

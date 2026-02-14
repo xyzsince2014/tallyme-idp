@@ -17,7 +17,8 @@ public class ResourceLogic {
   }
 
   /**
-   * get the resource for the given resourceId
+   * Fetches the resource for the given resourceId.
+   *
    * @param resourceId
    * @return Resource
    */

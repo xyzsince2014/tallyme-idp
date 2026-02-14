@@ -8,13 +8,11 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -33,11 +31,18 @@ import tokyomap.oauth.dtos.GenerateTokensResponseDto;
 @Component
 public class TokenLogic {
 
-  private static final int ACCESS_TOKEN_LIFETIME = 30;
-  private static final int REFRESH_TOKEN_LIFETIME = 90;
-  private static final int ID_TOKEN_LIFETIME = 60;
+  // in minutes
+  private static final int ACCESS_TOKEN_LIFETIME = 10;
+  private static final int ID_TOKEN_LIFETIME = 5;
+  private static final int REFRESH_TOKEN_LIFETIME = 1440; // 1 day
+
+  private static final String TOKEN_TYPE_BEARER = "Bearer";
   private static final String ALGORITHM = "RSA";
   private static final int KEY_SIZE = 2048;
+  private static final int HOURS_JST = 9;
+
+  private static final String TOKEN_TYPE_HINT_ACCESS_TOKEN = "access_token";
+  private static final String TOKEN_TYPE_HINT_REFRESH_TOKEN = "refresh_token";
 
   private final AccessTokenRepository accessTokenRepository;
   private final RefreshTokenRepository refreshTokenRepository;
@@ -53,8 +58,11 @@ public class TokenLogic {
 
   @Autowired
   public TokenLogic(
-      AccessTokenRepository accessTokenRepository, RefreshTokenRepository refreshTokenRepository, RsaPublicKeyRepository rsaPublicKeyRepository,
-      @Value("${docker.container.auth}") String containerAuth, @Value("${docker.container.resource}") String containerResource
+      AccessTokenRepository accessTokenRepository,
+      RefreshTokenRepository refreshTokenRepository,
+      RsaPublicKeyRepository rsaPublicKeyRepository,
+      @Value("${docker.container.auth}") String containerAuth,
+      @Value("${docker.container.resource}") String containerResource
   ) {
     this.accessTokenRepository = accessTokenRepository;
     this.refreshTokenRepository = refreshTokenRepository;
@@ -84,7 +92,8 @@ public class TokenLogic {
   }
 
   /**
-   * get the AccessToken entity for the given access token
+   * Gets the AccessToken entity for the given access token.
+   *
    * @param accessToken
    * @return AccessToken
    */
@@ -94,7 +103,8 @@ public class TokenLogic {
   }
 
   /**
-   * get the RefreshToken entity for the given refresh token
+   * Gets the RefreshToken entity for the given refresh token.
+   *
    * @param refreshToken
    * @return RefreshToken
    */
@@ -103,64 +113,100 @@ public class TokenLogic {
     return optionalRefreshToken.orElse(null);
   }
 
-  // todo: do not delete, update t_access(refesh)_token.expires_at instead
   /**
-   * delete the AccessToken and the RefreshToken
-   * @param accessToken
-   * @param refreshToken
+   * Physically deletes the token.
+   *
+   * @param token
+   * @param tokenTypeHint
    */
-  public void revokeTokens(String accessToken, String refreshToken) {
-    this.accessTokenRepository.deleteById(accessToken);
-    this.refreshTokenRepository.deleteById(refreshToken);
+  public void revokeToken(String token, String tokenTypeHint) {
+    if (token == null || token.isEmpty()) {
+      return;
+    }
+
+    if (tokenTypeHint.equals(TOKEN_TYPE_HINT_ACCESS_TOKEN)) {
+      this.accessTokenRepository.deleteById(token);
+      return;
+    }
+    if (tokenTypeHint.equals(TOKEN_TYPE_HINT_REFRESH_TOKEN)) {
+      this.refreshTokenRepository.deleteById(token);
+      return;
+    }
+
+    this.accessTokenRepository.deleteById(token);
+    this.refreshTokenRepository.deleteById(token);
   }
 
   /**
-   * generate JWT and signing them with RSA private key
-   * @param clientId
-   * @param sub
-   * @param scopes
-   * @param isRefreshTokenGenerated
-   * @param nonce
-   * @return GenerateTokensResponseDto
-   * @throws IOException
-   * @throws NoSuchAlgorithmException
-   * @throws InvalidKeySpecException
+   * Generates an access token and a refresh token for the Auth Code Flow and the Refresh Token Flow.
+   * A refresh token is always issued because these flows act on behalf of a resource owner (sub is present).
+   *
+   * @param clientId the client that requested the tokens
+   * @param sub      the resource owner's subject identifier
+   * @param scopes   the granted scopes
+   * @param nonce    the nonce from the original authorisation request (used in the ID token); may be null
+   * @return GenerateTokensResponseDto containing access token, refresh token, and ID token
+   * @throws Exception
    */
-  public GenerateTokensResponseDto generateTokens(String clientId, String sub,String[] scopes, Boolean isRefreshTokenGenerated, String nonce) throws Exception {
+  public GenerateTokensResponseDto generateTokensWithRefreshToken(
+    String clientId, String sub, String[] scopes, String nonce
+  ) throws Exception {
 
     LocalDateTime now = LocalDateTime.now();
 
-    SignedJWT accessJWT = this.createSignedJWT(sub, RandomStringUtils.random(8, true, true), scopes, clientId, now, ACCESS_TOKEN_LIFETIME);
+    String accessToken = this.createSignedJWT(sub, scopes, clientId, now, ACCESS_TOKEN_LIFETIME);
+    String refreshToken = this.createSignedJWT(sub, scopes, clientId, now, REFRESH_TOKEN_LIFETIME);
 
-    // Open ID Connect ID token
-    SignedJWT idJWT = this.createIdJWT(sub, clientId, nonce, now, ID_TOKEN_LIFETIME, now); // todo: authTime should be set on authentication
+    // generate an id token as well because a resource owner (sub) is always present in these flows
+    String idToken = this.createIdJWT(sub, clientId, nonce, now, ID_TOKEN_LIFETIME, now);
 
-    if(!isRefreshTokenGenerated) {
-      AccessToken accessTokenRegistered = this.accessTokenRepository.saveAndFlush(new AccessToken(accessJWT.serialize(), now, now));
-      // scopes must not be sent back to the client in production
-      GenerateTokensResponseDto responseDto = new GenerateTokensResponseDto("Bearer",accessTokenRegistered.getAccessToken(), null, idJWT.serialize(), String.join(" ", scopes));
-      return responseDto;
-    }
+    RefreshToken refreshTokenEntity = new RefreshToken(refreshToken, now, now);
+    RefreshToken registeredRefreshTokenEntity = this.refreshTokenRepository.saveAndFlush(refreshTokenEntity);
 
-    SignedJWT refreshJWT = this.createSignedJWT(sub, RandomStringUtils.random(8, true, true), scopes, clientId, now, REFRESH_TOKEN_LIFETIME);
-
-    AccessToken accessTokenRegistered = this.accessTokenRepository.saveAndFlush(new AccessToken(accessJWT.serialize(), now, now));
-    RefreshToken refreshTokenRegistered = this.refreshTokenRepository.saveAndFlush(new RefreshToken(refreshJWT.serialize(), now, now));
+    AccessToken accessTokenEntity = new AccessToken(accessToken, refreshTokenEntity, now, now);
+    AccessToken registeredAccessTokenEntity = this.accessTokenRepository.saveAndFlush(accessTokenEntity);
 
     // todo: scope must not be sent back to the client in production
-    GenerateTokensResponseDto responseDto = new GenerateTokensResponseDto(
-        "Bearer",
-        accessTokenRegistered.getAccessToken(),
-        refreshTokenRegistered.getRefreshToken(),
-        idJWT.serialize(),
-        String.join(" ", scopes)
+    return new GenerateTokensResponseDto(
+      TOKEN_TYPE_BEARER,
+      registeredAccessTokenEntity.getAccessToken(),
+      registeredRefreshTokenEntity.getRefreshToken(),
+      idToken,
+      String.join(" ", scopes)
     );
-
-    return responseDto;
   }
 
   /**
-   * create a JWSHeader
+   * Generates an access token only for the Client Credentials Flow.
+   * No refresh token is issued because the flow has no resource owner (sub is absent),
+   * and the client can re-authenticate with its own credentials at any time.
+   * No ID token is issued neither.
+   *
+   * @param clientId the client that requested the token
+   * @param scopes   the granted scopes
+   * @return GenerateTokensResponseDto containing only an access token (refresh token and ID token are null)
+   * @throws Exception
+   */
+  public GenerateTokensResponseDto generateAccessToken(String clientId, String[] scopes) throws Exception {
+
+    LocalDateTime now = LocalDateTime.now();
+
+    // sub is the client itself in the Client Credentials Flow (no resource owner)
+    String accessToken =
+      this.createSignedJWT(clientId, scopes, clientId, now, ACCESS_TOKEN_LIFETIME);
+
+    AccessToken registeredAccessTokenEntity =
+      this.accessTokenRepository.saveAndFlush(new AccessToken(accessToken, now, now));
+
+    // todo: scope must not be sent back to the client in production
+    return new GenerateTokensResponseDto(
+      TOKEN_TYPE_BEARER, registeredAccessTokenEntity.getAccessToken(), String.join(" ", scopes)
+    );
+  }
+
+  /**
+   * Creates a JWSHeader.
+   *
    * @return JWSHeader
    * @throws Exception
    */
@@ -176,69 +222,85 @@ public class TokenLogic {
   }
 
   /**
-   * create a signed JWT
-   * @param sub
-   * @param scopes
-   * @param clientId
-   * @return SignedJWT
+   * Creates a serialised signed JWT.
+   *
+   * @param sub      the subject (resource owner's identifier, or clientId for CCF)
+   * @param scopes   the granted scopes
+   * @param clientId the client the token is issued to
+   * @param iat      the issued-at timestamp
+   * @param minutes  the token lifetime in minutes
+   * @return serialized signed JWT
    * @throws Exception
    */
-  private SignedJWT createSignedJWT(String sub, String jti, String[] scopes, String clientId, LocalDateTime iat, long days) throws Exception {
+  private String createSignedJWT(
+    String sub, String[] scopes, String clientId, LocalDateTime iat, long minutes
+  ) throws Exception {
 
     JWSHeader jwsHeader = this.createJWSHeader();
 
+    // a cryptographically random value that uniquely identifies this token instance
+    String jti = RandomStringUtils.random(8, true, true);
+
     // payload
     JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-        .claim("iss", this.authServerHost) // the issuer, normally the URI of the auth server
-        .claim("sub", sub) // the subject, normally the unique identifier for the resource owner
-        .claim("aud", this.audience) // the audience, normally the URI(s) of the protected resource(s) the access token can be sent to
-        .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(+9))) // the issued-at timestamp of the token in seconds from 1 Jan 1970 (GMT)
-        .claim("exp", iat.plusDays(days).toEpochSecond(ZoneOffset.ofHours(+9))) // the expiration time, the token expires in 5 min later in this case
-        .claim("jti", jti) // the unique identifier of the token, that is a value unique to each token created by the issuer, and it’s often a cryptographically random value
-        .claim("scopes", scopes)
-        .claim("clientId", clientId)
-        .build();
+      .claim("iss", this.authServerHost) // the issuer, normally the URI of the auth server
+      .claim("sub", sub != null ? sub : clientId) // the subject, normally the unique identifier for the resource owner
+      .claim("aud", this.audience) // the audience, normally the URI(s) of the protected resource(s) the access token can be sent to
+      .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the issued-at timestamp of the token in seconds from 1 Jan 1970 (GMT)
+      .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the expiration time
+      .claim("jti", jti) // the unique identifier of the token, a value unique to each token created by the issuer
+      .claim("scopes", scopes)
+      .claim("clientId", clientId)
+      .build();
 
     SignedJWT signedJWT = new SignedJWT(jwsHeader, jwtClaimsSet);
     RSASSASigner signer = new RSASSASigner(this.rsaPrivateKey);
     signedJWT.sign(signer);
 
-    return signedJWT;
+    return signedJWT.serialize();
   }
 
   /**
-   * create an ID JWT
+   * Creates an ID JWT serialised.
+   * ID token must have aud and nonce claims besides claims of access token for security purpose.
+   *
    * @param sub
    * @param clientId
    * @param nonce
-   * @return SignedJWT
+   * @param iat
+   * @param minutes
+   * @param authTime
+   * @return serialised signed JWT
    * @throws Exception
    */
-  private SignedJWT createIdJWT(String sub, String clientId, String nonce, LocalDateTime iat, long minutes, LocalDateTime authTime) throws Exception {
+  private String createIdJWT(
+    String sub, String clientId, String nonce, LocalDateTime iat, long minutes, LocalDateTime authTime
+  ) throws Exception {
 
     // payload
     JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-        .claim("iss", this.authServerHost) // the issuer of the token, i.e. the URL of the ID Provider
-        .claim("sub", sub) // the subject of the token, a stable and unique identifier for the user at the ID Provider, which is usually a machine-readable string and shouldn’t be used as a username
-        .claim("aud", clientId) // the audience of the id token that must contain the client ID of the Relying Party
-        .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(+9))) // the timestamp at which the token is issued
-        .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(+9))) // the expiration timestamp of the token at which all ID tokens expire and usually pretty quickly
-        .claim("nonce", nonce) // a string sent by the Relying Party during the authentication request, used to mitigate replay attacks. It must be included if the Relying Party sends it
-        .claim("authTime", authTime.toEpochSecond(ZoneOffset.ofHours(+9))) // the timestamp at which the user authenticated to the Id Provider
-        .claim("amr", new String[] {"pwd"}) // the authentication method reference, which indicates how the user authenticated to the Id Provider, e.g. pwd (by password), otp (by password and one-time password), sms (by SMS), email (by mail)
-        // todo: .claim("atHash", accessToken)
-        // todo: .claim("cHash", hashed authorisation code)
-        .build();
+      .claim("iss", this.authServerHost) // the issuer of the token, i.e. the URL of the IdP
+      .claim("sub", sub) // the subject of the token, a stable and unique identifier for the user at the IdP, which is usually a machine-readable string and shouldn’t be used as a username.
+      .claim("aud", clientId) // the audience of the id token that must contain the client ID of the RP
+      .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the timestamp at which the token is issued
+      .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the expiration timestamp of the token. all ID tokens expire, usually pretty quickly.
+      .claim("nonce", nonce) // a string sent by the RP during the authentication request, used to mitigate replay attacks. It must be included if the RP sends it
+      .claim("authTime", authTime.toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the timestamp at which the user authenticated to the IdP
+      .claim("amr", new String[] {"pwd"}) // the authentication method reference, which indicates how the user authenticated to the IdP, e.g. pwd (by password), otp (by password and one-time password), sms (by SMS), email (by mail).
+      // todo: .claim("atHash", accessToken) // cryptographic hash of the access token
+      // todo: .claim("cHash", hashed authorisation code) // cryptographic hash of the authorization code
+      .build();
 
     SignedJWT signedJWT = new SignedJWT(this.createJWSHeader(), jwtClaimsSet);
     RSASSASigner signer = new RSASSASigner(this.rsaPrivateKey);
     signedJWT.sign(signer);
 
-    return signedJWT;
+    return signedJWT.serialize();
   }
 
   /**
-   * get the RSAPublicKey for the given kid
+   * Gets the RSAPublicKey for the given kid.
+   *
    * @param kid
    * @return RSAPublicKey
    */

@@ -19,7 +19,7 @@ import tokyomap.oauth.domain.logics.TokenLogic;
 import tokyomap.oauth.dtos.CredentialsDto;
 
 @Component
-public class TokenScrutiny {
+public class TokenScrutinyService {
 
   private final TokenLogic tokenLogic;
   private final String authServerHost;
@@ -28,14 +28,19 @@ public class TokenScrutiny {
   private final String audience; // registered resource servers
 
   @Autowired
-  public TokenScrutiny(TokenLogic tokenLogic, @Value("${docker.container.auth}") String containerAuth, @Value("${docker.container.resource}") String containerResource) {
+  public TokenScrutinyService(
+    TokenLogic tokenLogic,
+    @Value("${docker.container.auth}") String containerAuth,
+    @Value("${docker.container.resource}") String containerResource
+  ) {
     this.tokenLogic = tokenLogic;
     this.authServerHost = containerAuth;
     this.audience = containerResource;
   }
 
   /**
-   * scrutinise the given signed JWT
+   * Scrutinises the given signed JWT.
+   *
    * @param credentialsDto
    * @param incomingToken
    * @return SignedJWT
@@ -78,7 +83,8 @@ public class TokenScrutiny {
   }
 
   /**
-   * scrutinise the given signed JWT except its claims
+   * Scrutinises the given signed JWT except its claims.
+   *
    * @param incomingToken
    * @return
    */

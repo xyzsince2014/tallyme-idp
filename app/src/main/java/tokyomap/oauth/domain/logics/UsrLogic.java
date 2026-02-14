@@ -17,7 +17,8 @@ public class UsrLogic {
   }
 
   /**
-   * get the usr for a given sub
+   * Fetches the user for a given sub.
+   *
    * @param sub
    * @return
    */
@@ -35,7 +36,8 @@ public class UsrLogic {
 //  }
 
   /**
-   * get the usr for a given email
+   * Fetches the user for the given email.
+   *
    * @param email
    * @return Usr
    */
@@ -44,7 +46,8 @@ public class UsrLogic {
   }
 
   /**
-   * register the given usr
+   * Registers the given user.
+   *
    * @param usr
    * @return usr registered
    */

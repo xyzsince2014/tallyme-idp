@@ -1,4 +1,15 @@
-```mermaid
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Mermaid Demo</title>
+  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+<section>
+<h2>Implicit Code Flow</h2>
+<p>Deprected</p>
+<div class="mermaid">
 sequenceDiagram
 autonumber
 
@@ -50,5 +61,11 @@ auth-->>user: 302 to redirect URI with fragment
 note over user, auth: gragment contains accessToken, idToken, state and scopes="hoge fuga"
 
 user->>app: GET / with fragment
-
-```
+</div>
+<script>
+    mermaid.initialize({
+        startOnLoad: true
+    });
+</script>
+</body>
+</html>

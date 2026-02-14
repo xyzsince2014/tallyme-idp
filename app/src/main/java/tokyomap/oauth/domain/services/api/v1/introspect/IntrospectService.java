@@ -1,6 +1,11 @@
 package tokyomap.oauth.domain.services.api.v1.introspect;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import java.util.Date;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import tokyomap.oauth.domain.entities.postgres.AccessToken;
@@ -8,8 +13,9 @@ import tokyomap.oauth.domain.entities.postgres.Resource;
 import tokyomap.oauth.domain.logics.ResourceLogic;
 import tokyomap.oauth.domain.logics.TokenLogic;
 import tokyomap.oauth.domain.services.api.v1.ApiException;
-import tokyomap.oauth.domain.services.api.v1.TokenScrutiny;
+import tokyomap.oauth.domain.services.api.v1.TokenScrutinyService;
 import tokyomap.oauth.dtos.CredentialsDto;
+import tokyomap.oauth.dtos.IntrospectResponseDto;
 import tokyomap.oauth.utils.Decorder;
 
 @Service
@@ -17,29 +23,41 @@ public class IntrospectService {
 
   // todo: use global constants
   private static final String ERROR_MESSAGE_INVALID_RESOURCE = "Invalid Resource";
-  private static final String ERROR_MESSAGE_INVALID_ACCESS_TOKEN = "Invalid Access Token";
   private static final String ERROR_MESSAGE_NO_AUTHORIZATION_HEADER = "No Authorization Header";
 
-  private final TokenScrutiny tokenScrutiny;
+  private final TokenScrutinyService tokenScrutinyService;
   private final Decorder decorder;
   private final ResourceLogic resourceLogic;
   private final TokenLogic tokenLogic;
+  private final String authServerHost;
+  private final String audience;
 
   @Autowired
-  public IntrospectService(TokenScrutiny tokenScrutiny, Decorder decorder, ResourceLogic resourceLogic, TokenLogic tokenLogic) {
-    this.tokenScrutiny = tokenScrutiny;
+  public IntrospectService(
+      TokenScrutinyService tokenScrutinyService,
+      Decorder decorder,
+      ResourceLogic resourceLogic,
+      TokenLogic tokenLogic,
+      @Value("${docker.container.auth}") String authServerHost,
+      @Value("${docker.container.resource}") String audience
+  ) {
+    this.tokenScrutinyService = tokenScrutinyService;
     this.decorder = decorder;
     this.resourceLogic = resourceLogic;
     this.tokenLogic = tokenLogic;
+    this.authServerHost = authServerHost;
+    this.audience = audience;
   }
 
   /**
-   * execute introspection of the given access token
+   * Executes introspection on the given access token.
+   * RFC 7662: returns active, sub, scope, and aud for a valid token.
+   *
    * @param incomingToken
    * @param authorization
-   * @return Boolean
+   * @return IntrospectResponseDto
    */
-  public Boolean execute(String incomingToken, String authorization) throws Exception {
+  public IntrospectResponseDto execute(String incomingToken, String authorization) throws Exception {
 
     // fetch resourceId, resourceSecret from the Authorization header
     CredentialsDto credentialsDto = this.decorder.decodeCredentials(authorization);
@@ -52,14 +70,75 @@ public class IntrospectService {
       throw new ApiException(HttpStatus.UNAUTHORIZED, ERROR_MESSAGE_INVALID_RESOURCE);
     }
 
-    // todo: handle TokenScrutinyFailureException
-    this.tokenScrutiny.execute(incomingToken);
-
-    AccessToken accessToken = this.tokenLogic.getAccessToken(incomingToken);
-    if (accessToken == null) {
-      throw new ApiException(HttpStatus.UNAUTHORIZED, ERROR_MESSAGE_INVALID_ACCESS_TOKEN);
+    // RFC 7662 §2.2: a token which fails signature or format checks is simply inactive — not an error response
+    SignedJWT signedJWT;
+    try {
+      signedJWT = this.tokenScrutinyService.execute(incomingToken);
+    } catch (ApiException e) {
+      return new IntrospectResponseDto(false);
     }
 
+    // RFC 7662 §2.2: return inactive if the token is not registered (already revoked or never issued)
+    AccessToken accessToken = this.tokenLogic.getAccessToken(incomingToken);
+    if (accessToken == null) {
+      return new IntrospectResponseDto(false);
+    }
+
+    // RFC 7662 §2.2: validate claims — return active: false for any invalid claim
+    if (!this.isClaimsValid(signedJWT)) {
+      return new IntrospectResponseDto(false);
+    }
+
+    return this.buildIntrospectResponseDto(signedJWT);
+  }
+
+  /**
+   * Validates the JWT claims relevant to introspection per RFC 7662 §2.2:
+   * - iss must match this auth server
+   * - aud must contain this resource server
+   * - iat ≤ now ≤ exp (token must not be expired)
+   *
+   * @param signedJWT
+   * @return true if all claims are valid, false otherwise
+   */
+  private boolean isClaimsValid(SignedJWT signedJWT) throws Exception {
+    JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
+    Date now = new Date();
+
+    if (!this.authServerHost.equals(claims.getIssuer())) {
+      return false;
+    }
+    if (!claims.getAudience().contains(this.audience)) {
+      return false;
+    }
+    if (now.before(claims.getIssueTime()) || now.after(claims.getExpirationTime())) {
+      return false;
+    }
     return true;
+  }
+
+  /**
+   * Extracts RFC 7662 claims from the signed JWT and builds the introspection response.
+   * - sub: the subject of the token
+   * - scope: space-separated list of granted scopes
+   * - aud: intended audience (the resource server URI)
+   *
+   * @param signedJWT
+   * @return IntrospectResponseDto
+   */
+  private IntrospectResponseDto buildIntrospectResponseDto(SignedJWT signedJWT) throws Exception {
+    JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
+
+    String sub = claims.getSubject();
+
+    // scopes are stored as an array claim — join to a single space-separated string per RFC 7662
+    String[] scopes = claims.getStringArrayClaim("scopes");
+    String scope = scopes != null ? String.join(" ", scopes) : null;
+
+    // aud is a list per RFC 7519 — join to a single space-separated string
+    List<String> audList = claims.getAudience();
+    String aud = audList != null ? String.join(" ", audList) : null;
+
+    return new IntrospectResponseDto(true, sub, scope, aud);
   }
 }

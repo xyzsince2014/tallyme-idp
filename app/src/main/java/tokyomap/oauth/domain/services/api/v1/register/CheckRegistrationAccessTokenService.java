@@ -18,7 +18,8 @@ public class CheckRegistrationAccessTokenService {
   }
 
   /**
-   * check whether the given client is registered
+   * Makes sure that the client referred to is the same one that the registration access token was issued to.
+   *
    * @param clientId
    * @param authorization
    * @return registered client
@@ -31,7 +32,7 @@ public class CheckRegistrationAccessTokenService {
       throw new ApiException(HttpStatus.NOT_FOUND, "Client Not Found");
     }
 
-    if (authorization == null || authorization.toLowerCase().indexOf("bearer") == -1) {
+    if (authorization == null || authorization.toLowerCase().indexOf("basic") == -1) {
       throw new ApiException(HttpStatus.UNAUTHORIZED, "Unauthorised");
     }
 
