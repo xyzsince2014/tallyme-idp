@@ -1,6 +1,5 @@
 package tokyomap.oauth.domain.logics;
 
-import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -46,15 +45,13 @@ public class TokenLogic {
 
   private final AccessTokenRepository accessTokenRepository;
   private final RefreshTokenRepository refreshTokenRepository;
-  private final RsaPublicKeyRepository rsaPublicKeyRepository;
   private final String authServerHost;
 
   // todo: malfunctioning if use `private static final String[] audience = new String[] {"http://resource:8081"};`
   private final String audience; // registered resource servers
 
-  private RSAPublicKey rsaPublicKey;
-  private RSAPrivateKey rsaPrivateKey;
-  private String kid;
+  private final RSAPrivateKey rsaPrivateKey;
+  private final String kid;
 
   @Autowired
   public TokenLogic(
@@ -63,32 +60,39 @@ public class TokenLogic {
       RsaPublicKeyRepository rsaPublicKeyRepository,
       @Value("${docker.container.auth}") String containerAuth,
       @Value("${docker.container.resource}") String containerResource
-  ) {
+  ) throws Exception {
     this.accessTokenRepository = accessTokenRepository;
     this.refreshTokenRepository = refreshTokenRepository;
-    this.rsaPublicKeyRepository = rsaPublicKeyRepository;
     this.authServerHost = containerAuth;
     this.audience = containerResource;
 
-    try {
-      KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM);
-      keyGenerator.initialize(KEY_SIZE);
-      KeyPair kp = keyGenerator.genKeyPair();
-      this.rsaPublicKey = (RSAPublicKey) kp.getPublic();
-      this.rsaPrivateKey = (RSAPrivateKey) kp.getPrivate();
+    // The RSA key pair is generated once at startup and shared across all threads for the lifetime of this bean.
+    // This is the standard pattern for JWT signing: read-only shared state needs no synchronisation.
+    // todo:
+    //  In production, the pair should be rotated on a schedule (key rotation) rather than per-request,
+    //  and loaded from a secure keystore (e.g. AWS KMS, HashiCorp Vault) rather than generated in memory.
+    KeyPair keyPair = this.generateRsaKeyPair();
+    this.rsaPrivateKey = (RSAPrivateKey) keyPair.getPrivate();
 
-      // the JSON Web Key (JWK public key)
-      RSAKey jwk = new RSAKey.Builder(this.rsaPublicKey).keyIDFromThumbprint().build();
-      this.kid = jwk.getKeyID();
+    RSAPublicKey rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
+    RSAKey jwk = new RSAKey.Builder(rsaPublicKey).keyIDFromThumbprint().build();
+    this.kid = jwk.getKeyID();
 
-      LocalDateTime now = LocalDateTime.now();
-      this.rsaPublicKeyRepository.saveAndFlush(new RsaPublicKey(this.kid, this.rsaPublicKey, now, now));
+    LocalDateTime now = LocalDateTime.now();
+    rsaPublicKeyRepository.saveAndFlush(new RsaPublicKey(this.kid, rsaPublicKey, now, now));
+  }
 
-    } catch (NoSuchAlgorithmException e) {
-      // todo:
-    } catch (JOSEException e) {
-      // todo:
-    }
+  /**
+   * Generates a fresh RSA key pair to sign tokens with.
+   * Extracted from the constructor so that {@code rsaPrivateKey} and {@code kid} can be {@code final}.
+   *
+   * @return the generated KeyPair
+   * @throws NoSuchAlgorithmException if the RSA algorithm is unavailable on this JVM
+   */
+  private KeyPair generateRsaKeyPair() throws NoSuchAlgorithmException {
+    KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM);
+    keyGenerator.initialize(KEY_SIZE);
+    return keyGenerator.genKeyPair();
   }
 
   /**
@@ -296,19 +300,5 @@ public class TokenLogic {
     signedJWT.sign(signer);
 
     return signedJWT.serialize();
-  }
-
-  /**
-   * Gets the RSAPublicKey for the given kid.
-   *
-   * @param kid
-   * @return RSAPublicKey
-   */
-  public RSAPublicKey getRsaPublicKeyByKid(String kid) {
-    Optional<RsaPublicKey> rsaPublicKeyOptional = this.rsaPublicKeyRepository.findById(kid);
-    if (rsaPublicKeyOptional == null) {
-      return null;
-    }
-    return rsaPublicKeyOptional.get().getRsaPublicKey();
   }
 }

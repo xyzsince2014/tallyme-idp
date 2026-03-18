@@ -6,28 +6,31 @@ import java.util.Base64.Encoder;
 import org.apache.commons.codec.Charsets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import tokyomap.oauth.domain.logics.TokenLogic;
+import tokyomap.oauth.domain.logics.RsaPublicKeyLogic;
 
 @Service
 public class RetrieveRsaPublicKeyService {
 
-  private final Encoder encodeder = Base64.getEncoder();
+  private static final String FORMAT_RSA_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----%n%s%n-----END PUBLIC KEY-----%n";
 
-  private final TokenLogic tokenLogic;
+  private final RsaPublicKeyLogic rsaPublicKeyLogic;
+  private final Encoder encoder;
 
   @Autowired
-  public RetrieveRsaPublicKeyService(TokenLogic tokenLogic) {
-    this.tokenLogic = tokenLogic;
+  public RetrieveRsaPublicKeyService(RsaPublicKeyLogic rsaPublicKeyLogic) {
+    this.rsaPublicKeyLogic = rsaPublicKeyLogic;
+    this.encoder = Base64.getEncoder();
   }
 
   /**
-   * get the RSAPublicKey for the given kid
+   * Gets the RSAPublicKey for the given kid.
+   *
    * @param kid
    * @return the PEM encoded public key
    */
   public String execute(String kid) throws Exception {
-    RSAPublicKey rsaPublicKey = this.tokenLogic.getRsaPublicKeyByKid(kid);
-    byte[] encoded = encodeder.encode(rsaPublicKey.getEncoded());
+    RSAPublicKey rsaPublicKey = this.rsaPublicKeyLogic.getRsaPublicKeyByKid(kid);
+    byte[] encoded = encoder.encode(rsaPublicKey.getEncoded());
 
     int index = 0;
     StringBuilder sb = new StringBuilder(encoded.length + 20);
@@ -40,7 +43,6 @@ public class RetrieveRsaPublicKeyService {
       index += len;
     }
 
-    // todo: the format should be a constant
-    return String.format("-----BEGIN PUBLIC KEY-----%n%s%n-----END PUBLIC KEY-----%n", sb);
+    return String.format(FORMAT_RSA_PUBLIC_KEY, sb);
   }
 }

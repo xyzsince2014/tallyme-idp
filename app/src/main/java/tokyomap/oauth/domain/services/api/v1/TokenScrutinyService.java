@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import tokyomap.oauth.domain.logics.RsaPublicKeyLogic;
 import tokyomap.oauth.domain.logics.TokenLogic;
 import tokyomap.oauth.dtos.CredentialsDto;
 
@@ -22,6 +23,7 @@ import tokyomap.oauth.dtos.CredentialsDto;
 public class TokenScrutinyService {
 
   private final TokenLogic tokenLogic;
+  private final RsaPublicKeyLogic rsaPublicKeyLogic;
   private final String authServerHost;
 
   // todo: malfunctioning if use `private static final String[] audience = new String[] {"http://resource:8081"};`
@@ -30,10 +32,12 @@ public class TokenScrutinyService {
   @Autowired
   public TokenScrutinyService(
     TokenLogic tokenLogic,
+    RsaPublicKeyLogic rsaPublicKeyLogic,
     @Value("${docker.container.auth}") String containerAuth,
     @Value("${docker.container.resource}") String containerResource
   ) {
     this.tokenLogic = tokenLogic;
+    this.rsaPublicKeyLogic = rsaPublicKeyLogic;
     this.authServerHost = containerAuth;
     this.audience = containerResource;
   }
@@ -107,7 +111,8 @@ public class TokenScrutinyService {
   }
 
   /**
-   * check the JWS header of the given signedJWT
+   * Checks the JWS header of the given signedJWT.
+   *
    * @param signedJWT
    */
   private void checkJWSHeader(SignedJWT signedJWT) throws ApiException {
@@ -121,12 +126,13 @@ public class TokenScrutinyService {
   }
 
   /**
-   * check the signature of the given signedJWT
+   * Checks the signature of the given signedJWT.
+   *
    * @param signedJWT
    * @throws JOSEException
    */
   private void checkJWSSignature(SignedJWT signedJWT) throws JOSEException {
-    RSAPublicKey rsaPublicKey = this.tokenLogic.getRsaPublicKeyByKid(signedJWT.getHeader().getKeyID());
+    RSAPublicKey rsaPublicKey = this.rsaPublicKeyLogic.getRsaPublicKeyByKid(signedJWT.getHeader().getKeyID());
     JWSVerifier verifier = new RSASSAVerifier(rsaPublicKey);
     signedJWT.verify(verifier);
   }
