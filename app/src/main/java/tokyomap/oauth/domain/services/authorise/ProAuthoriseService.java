@@ -65,13 +65,13 @@ public class ProAuthoriseService {
       throw new InvalidProAuthoriseException("Invalid RequestId");
     }
 
-    String[] requestedScopes = preAuthoriseCache.getScopes();
+    String[] requestedScope = preAuthoriseCache.getScope();
 
-    if(!Arrays.asList(resourceOwner.getScopes().split(" ")).containsAll(Arrays.asList(requestedScopes))) {
+    if(!Arrays.asList(resourceOwner.getScope().split(" ")).containsAll(Arrays.asList(requestedScope))) {
       throw new InvalidProAuthoriseException("Invalid Scopes Requested");
     }
 
-    return new AuthenticationResult(resourceOwner, requestedScopes, preAuthoriseCache);
+    return new AuthenticationResult(resourceOwner, requestedScope, preAuthoriseCache);
   }
 
   /**
@@ -82,12 +82,12 @@ public class ProAuthoriseService {
    */
   private URI issueCode(AuthenticationResult authenticationResult) {
     String sub = authenticationResult.getResourceOwner().getSub();
-    String[] requestedScopes = authenticationResult.getScopesRequested();
+    String[] requestedScope = authenticationResult.getScopesRequested();
     PreAuthoriseCache preAuthoriseCache = authenticationResult.getAuthorisationRequest();
 
     String code = RandomStringUtils.random(8, true, true);
     
-    ProAuthoriseCache proAuthoriseCache = new ProAuthoriseCache(sub, requestedScopes, preAuthoriseCache);
+    ProAuthoriseCache proAuthoriseCache = new ProAuthoriseCache(sub, requestedScope, preAuthoriseCache);
     this.redisLogic.saveProAuthoriseCache(code, proAuthoriseCache);
 
     URI redirectUri = UriComponentsBuilder
@@ -102,12 +102,12 @@ public class ProAuthoriseService {
 
   private class AuthenticationResult {
     private Usr resourceOwner;
-    private String[] requestedScopes;
+    private String[] requestedScope;
     private PreAuthoriseCache preAuthoriseCache;
 
-    AuthenticationResult(Usr resourceOwner, String[] requestedScopes, PreAuthoriseCache preAuthoriseCache) {
+    AuthenticationResult(Usr resourceOwner, String[] requestedScope, PreAuthoriseCache preAuthoriseCache) {
       this.resourceOwner = resourceOwner;
-      this.requestedScopes = requestedScopes;
+      this.requestedScope = requestedScope;
       this.preAuthoriseCache = preAuthoriseCache;
     }
 
@@ -120,11 +120,11 @@ public class ProAuthoriseService {
     }
 
     public String[] getScopesRequested() {
-      return requestedScopes;
+      return requestedScope;
     }
 
-    public void setScopesRequested(String[] requestedScopes) {
-      this.requestedScopes = requestedScopes;
+    public void setScopesRequested(String[] requestedScope) {
+      this.requestedScope = requestedScope;
     }
 
     public PreAuthoriseCache getAuthorisationRequest() {

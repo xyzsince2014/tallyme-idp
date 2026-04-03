@@ -35,7 +35,7 @@
     auth->>auth: checkAccessTokenRegistration()
     auth->>auth: unregister client
     auth-->>admin: 204 No Content
-    admin->>admin: nullify stored tokens, state, scopes, codeVerifier
+    admin->>admin: nullify stored tokens, state, scope, codeVerifier
     admin-->>user: 200 OK + index.html
 </div>
 </section>

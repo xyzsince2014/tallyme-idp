@@ -11,7 +11,7 @@ public class TokenValidationResultDto<T> {
   /** The client ID of the validated client. */
   private String clientId;
 
-  /** The authorisation payload fetched from Redis, carrying sub, scopes, and the original authorisation request. */
+  /** The authorisation payload fetched from Redis, carrying sub, scope, and the original authorisation request. */
   private T payload;
 
   /** The auth code used to redeem this token request, by which code can be removed from Redis after a successful token exchange. */

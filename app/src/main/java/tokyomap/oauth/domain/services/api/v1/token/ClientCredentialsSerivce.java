@@ -36,9 +36,9 @@ public class ClientCredentialsSerivce extends TokenService<CredentialsDto> {
   public TokenValidationResultDto<CredentialsDto> execValidation(GenerateTokensRequestDto requestDto, String authorization) throws ApiException {
 
     CredentialsDto credentialsDto = this.validateClient(requestDto, authorization);
-    String[] requestedScopes = requestDto.getScopes();
+    String[] requestedScope = requestDto.getScope();
 
-    if (!Arrays.asList(credentialsDto.getScopes()).containsAll(Arrays.asList(requestedScopes))) {
+    if (!Arrays.asList(credentialsDto.getScope()).containsAll(Arrays.asList(requestedScope))) {
       throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_SCOPES);
     }
 
@@ -58,8 +58,10 @@ public class ClientCredentialsSerivce extends TokenService<CredentialsDto> {
   ) throws Exception {
 
     // the Client Credentials Flow has no resource owner — no refresh token or ID token is issued
-    GenerateTokensResponseDto responseDto =
-      this.tokenLogic.generateAccessToken(tokenValidationResultDto.getClientId(), tokenValidationResultDto.getPayload().getScopes());
+    GenerateTokensResponseDto responseDto = this.tokenLogic.generateAccessToken(
+      tokenValidationResultDto.getClientId(),
+      tokenValidationResultDto.getPayload().getScope()
+    );
 
     return responseDto;
   }

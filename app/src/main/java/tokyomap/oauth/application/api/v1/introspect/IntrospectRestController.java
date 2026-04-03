@@ -3,14 +3,13 @@ package tokyomap.oauth.application.api.v1.introspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tokyomap.oauth.domain.services.api.v1.introspect.IntrospectService;
 import tokyomap.oauth.domain.services.api.v1.ApiException;
 import tokyomap.oauth.dtos.IntrospectResponseDto;
 import tokyomap.oauth.dtos.RequestIntrospectDto;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/introspect")
@@ -25,11 +24,16 @@ public class IntrospectRestController {
 
   @RequestMapping(method = RequestMethod.POST, headers = "Content-Type=application/x-www-form-urlencoded;charset=utf-8")
   public ResponseEntity<IntrospectResponseDto> introspect(
-    RequestIntrospectDto requestDto, @RequestHeader("Authorization") String authorization
+    @RequestParam Map<String, String> params, @RequestHeader("Authorization") String authorization
   ) {
 
+    String token = params.get("token");
+    if (token == null || token.isEmpty()) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
     try {
-      IntrospectResponseDto responseDto = this.introspectService.execute(requestDto.getToken(), authorization);
+      IntrospectResponseDto responseDto = this.introspectService.execute(token, authorization);
       return ResponseEntity.status(HttpStatus.OK).body(responseDto);
 
     } catch (ApiException e) {

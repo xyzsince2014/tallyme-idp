@@ -1,58 +1,51 @@
 package tokyomap.oauth.dtos;
 
 import java.io.Serializable;
-import org.springframework.lang.Nullable;
 
 public class CredentialsDto implements Serializable {
 
   private static final long serialVersionUID = 6501945367821634948L;
 
-  @Nullable
   private String id;
 
-  @Nullable
   private String secret;
 
-  @Nullable
-  private String[] scopes;
+  private String[] scope;
 
   public CredentialsDto() {}
 
-  public CredentialsDto(@Nullable String id, @Nullable String secret) {
+  public CredentialsDto(String id, String secret) {
     this.id = id;
     this.secret = secret;
   }
 
-  public CredentialsDto(@Nullable String id, @Nullable String secret, @Nullable String[] scopes) {
+  public CredentialsDto(String id, String secret, String[] scope) {
     this.id = id;
     this.secret = secret;
-    this.scopes = scopes;
+    this.scope = scope;
   }
 
-  @Nullable
   public String getId() {
     return id;
   }
 
-  public void setId(@Nullable String id) {
+  public void setId(String id) {
     this.id = id;
   }
 
-  @Nullable
   public String getSecret() {
     return secret;
   }
 
-  public void setSecret(@Nullable String secret) {
+  public void setSecret(String secret) {
     this.secret = secret;
   }
 
-  @Nullable
-  public String[] getScopes() {
-    return scopes;
+  public String[] getScope() {
+    return scope;
   }
 
-  public void setScopes(@Nullable String[] scopes) {
-    this.scopes = scopes;
+  public void setScope(String[] scope) {
+    this.scope = scope;
   }
 }

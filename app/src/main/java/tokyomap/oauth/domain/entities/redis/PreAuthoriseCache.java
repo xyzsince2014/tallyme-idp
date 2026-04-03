@@ -8,7 +8,7 @@ public class PreAuthoriseCache implements Serializable {
   private static final long serialVersionUID = -2333688999379632926L;
 
   private String responseType;
-  private String[] scopes;
+  private String[] scope;
   private String clientId;
   private String redirectUri;
   private String state;
@@ -16,15 +16,15 @@ public class PreAuthoriseCache implements Serializable {
   private String codeChallengeMethod;
   private String nonce;
 
-  // used to deserialise values by RedisTemplate
+  // used to deserialize values by RedisTemplate
   PreAuthoriseCache() {}
 
   public PreAuthoriseCache(
-      String responseType, String[] scopes, String clientId, String redirectUri,
+      String responseType, String[] scope, String clientId, String redirectUri,
       String state, String codeChallenge, String codeChallengeMethod, String nonce
   ) {
     this.responseType = responseType;
-    this.scopes = scopes;
+    this.scope = scope;
     this.clientId = clientId;
     this.redirectUri = redirectUri;
     this.state = state;
@@ -41,12 +41,12 @@ public class PreAuthoriseCache implements Serializable {
     this.responseType = responseType;
   }
 
-  public String[] getScopes() {
-    return scopes;
+  public String[] getScope() {
+    return scope;
   }
 
-  public void setScopes(String[] scopes) {
-    this.scopes = scopes;
+  public void setScopes(String[] scope) {
+    this.scope = scope;
   }
 
   public String getClientId() {
@@ -95,8 +95,13 @@ public class PreAuthoriseCache implements Serializable {
 
   @Override
   public String toString() {
-    return "responseType = " + this.responseType + ", scopes = " + String.join(" ", this.scopes) + ", clientId = " + this.clientId
-        + ", redirectUri = " + this.redirectUri + ", state = " + this.state + ", codeChallenge = " + this.codeChallenge
-        + ", codeChallengeMethod = " + this.codeChallengeMethod + ", nonce = " + this.nonce;
+    return "responseType = " + this.responseType
+      + ", scope = " + String.join(" ", this.scope)
+      + ", clientId = " + this.clientId
+      + ", redirectUri = " + this.redirectUri
+      + ", state = " + this.state
+      + ", codeChallenge = " + this.codeChallenge
+      + ", codeChallengeMethod = " + this.codeChallengeMethod
+      + ", nonce = " + this.nonce;
   }
 }

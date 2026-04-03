@@ -22,7 +22,7 @@ rp->>rp: nullify accessToken and state
 rp->>rp: generate and store state and codeVerifier
 rp-->>user: 302 Found
 user->>auth: GET /authorise?queryParams
-note over user, auth: query params are<br>responseType="authorization_code", scopes="foo boo", client_id, redirectUri, state, codeChallenge and codeChallengeMethod="SHA256"
+note over user, auth: query params are<br>responseType="authorization_code", scope="foo boo", client_id, redirectUri, state, codeChallenge and codeChallengeMethod="SHA256"
 auth->>auth: find client, validate query params
 auth->>auth: generate requestId, cache query params
 auth-->>user: 200 OK + autorise.html
@@ -41,15 +41,15 @@ rp->>auth: POST /token<br>client_id and client_secret in Authorization header<br
 auth->>auth: execute validation
 auth->>auth: generate access, refresh and id tokens
 auth-->>rp: 200 OK + GenerateTokensResponseDto
-rp->>rp: store tokens and scopes
+rp->>rp: store tokens and scope
 rp->>rp: verify id token
 rp->>res: GET /userinfo + access token in Authorization header
 res->>auth: POST /introspect<br>+ resourceId and resourceSecret in Authorization header<br>+ RequestIntrospectDto
 auth->>auth: validate resource, find access token
 auth-->>res: 200 OK + RequestIntrospectDto
-res->>res: check if openid is in scopes of token
+res->>res: check if openid is in scope of token
 res->>res: get user by sub of token
-res->>res: create userInfo according to scopes of token
+res->>res: create userInfo according to scope of token
 res-->>rp: 200 OK + userInfo
 rp->>user: 200 OK + index.html with userInfo
 </div>

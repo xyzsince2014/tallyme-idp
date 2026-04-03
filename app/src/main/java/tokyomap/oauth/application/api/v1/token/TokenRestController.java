@@ -4,10 +4,7 @@ import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tokyomap.oauth.domain.entities.redis.ProAuthoriseCache;
 import tokyomap.oauth.domain.services.api.v1.ApiException;
 import tokyomap.oauth.domain.services.api.v1.token.AuthorisationCodeFlowService;
@@ -17,6 +14,8 @@ import tokyomap.oauth.dtos.CredentialsDto;
 import tokyomap.oauth.dtos.GenerateTokensRequestDto;
 import tokyomap.oauth.dtos.GenerateTokensResponseDto;
 import tokyomap.oauth.dtos.TokenValidationResultDto;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/token")
@@ -46,10 +45,23 @@ public class TokenRestController {
 
   @RequestMapping(method = RequestMethod.POST, headers = "Content-Type=application/x-www-form-urlencoded;charset=utf-8")
   public ResponseEntity<GenerateTokensResponseDto> generateTokens(
-    GenerateTokensRequestDto requestDto, @RequestHeader("Authorization") String authorization
+    @RequestParam Map<String, String> params,
+    @RequestHeader("Authorization") String authorization
   ) {
-
     try {
+      GenerateTokensRequestDto requestDto = new GenerateTokensRequestDto();
+      requestDto.setGrantType(params.get("grant_type"));
+      requestDto.setCode(params.get("code"));
+      requestDto.setRedirectUri(params.get("redirect_uri"));
+      requestDto.setCodeVerifier(params.get("code_verifier"));
+      requestDto.setRefreshToken(params.get("refresh_token"));
+      requestDto.setClientId(params.get("client_id"));
+      requestDto.setClientSecret(params.get("client_secret"));
+
+      String scopeStr = params.get("scope");
+      String[] scope = (scopeStr != null && !scopeStr.isEmpty()) ? scopeStr.split(" ") : new String[0];
+      requestDto.setScope(scope);
+
       switch (requestDto.getGrantType()) {
         case GRANT_TYPE_AUTHORISATION_CODE: {
           TokenValidationResultDto<ProAuthoriseCache> tokenValidationResultDto =

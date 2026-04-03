@@ -45,7 +45,7 @@ note over user: push `handleAuthRequest`
 
 user->>user: generate and store state
 user->>auth: GET /authorise?queryParams
-note over user, auth: query params are responseType="TOKEN", state, scopes="hoge fuga", clientId and redirectUri
+note over user, auth: query params are responseType="TOKEN", state, scope="hoge fuga", clientId and redirectUri
 
 auth->>auth: find client, validate query params
 auth->>auth: generate requestId, cache query params
@@ -58,7 +58,7 @@ user->>auth: POST /authorise + ProAuthoriseRequestDto
 auth->>auth: execute validation
 auth->>auth: generate accessToken
 auth-->>user: 302 to redirect URI with fragment
-note over user, auth: gragment contains accessToken, idToken, state and scopes="hoge fuga"
+note over user, auth: gragment contains accessToken, idToken, state and scope="hoge fuga"
 
 user->>app: GET / with fragment
 </div>

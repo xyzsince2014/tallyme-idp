@@ -53,11 +53,11 @@ public class IntrospectService {
    * Executes introspection on the given access token.
    * RFC 7662: returns active, sub, scope, and aud for a valid token.
    *
-   * @param incomingToken
+   * @param token
    * @param authorization
    * @return IntrospectResponseDto
    */
-  public IntrospectResponseDto execute(String incomingToken, String authorization) throws Exception {
+  public IntrospectResponseDto execute(String token, String authorization) throws Exception {
 
     // fetch resourceId, resourceSecret from the Authorization header
     CredentialsDto credentialsDto = this.decorder.decodeCredentials(authorization);
@@ -73,13 +73,13 @@ public class IntrospectService {
     // RFC 7662 §2.2: a token which fails signature or format checks is simply inactive — not an error response
     SignedJWT signedJWT;
     try {
-      signedJWT = this.tokenScrutinyService.execute(incomingToken);
+      signedJWT = this.tokenScrutinyService.execute(token);
     } catch (ApiException e) {
       return new IntrospectResponseDto(false);
     }
 
     // RFC 7662 §2.2: return inactive if the token is not registered (already revoked or never issued)
-    AccessToken accessToken = this.tokenLogic.getAccessToken(incomingToken);
+    AccessToken accessToken = this.tokenLogic.getAccessToken(token);
     if (accessToken == null) {
       return new IntrospectResponseDto(false);
     }
@@ -120,7 +120,7 @@ public class IntrospectService {
   /**
    * Extracts RFC 7662 claims from the signed JWT and builds the introspection response.
    * - sub: the subject of the token
-   * - scope: space-separated list of granted scopes
+   * - scope: space-separated list of granted scope
    * - aud: intended audience (the resource server URI)
    *
    * @param signedJWT
@@ -128,12 +128,8 @@ public class IntrospectService {
    */
   private IntrospectResponseDto buildIntrospectResponseDto(SignedJWT signedJWT) throws Exception {
     JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
-
     String sub = claims.getSubject();
-
-    // scopes are stored as an array claim — join to a single space-separated string per RFC 7662
-    String[] scopes = claims.getStringArrayClaim("scopes");
-    String scope = scopes != null ? String.join(" ", scopes) : null;
+    String scope = claims.getStringClaim("scope");
 
     // aud is a list per RFC 7519 — join to a single space-separated string
     List<String> audList = claims.getAudience();

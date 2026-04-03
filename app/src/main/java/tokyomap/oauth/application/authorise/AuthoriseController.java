@@ -50,13 +50,13 @@ public class AuthoriseController {
 
     try {
       PreAuthoriseCache preAuthoriseCache = new PreAuthoriseCache(
-        queryParams.get("responseType"),
-        queryParams.get("scopes").split(" "),
-        queryParams.get("clientId"),
-        queryParams.get("redirectUri"),
+        queryParams.get("response_type"),
+        queryParams.get("scope").split(" "),
+        queryParams.get("client_id"),
+        queryParams.get("redirect_uri"),
         queryParams.get("state"),
-        queryParams.get("codeChallenge"),
-        queryParams.get("codeChallengeMethod"),
+        queryParams.get("code_challenge"),
+        queryParams.get("code_challenge_method"),
         queryParams.get("nonce")
       );
 

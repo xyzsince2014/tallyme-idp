@@ -13,7 +13,7 @@ public class IntrospectResponseDto extends ApiResponseDto implements Serializabl
   private String sub;
 
   /**
-   * Granted scopes.
+   * Granted scope.
    * Per RFC 7662, scope in the introspection response is a single space-separated String, not an array.
    */
   private String scope;

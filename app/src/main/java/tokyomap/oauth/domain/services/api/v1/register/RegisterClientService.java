@@ -102,7 +102,7 @@ public class RegisterClientService extends RegisterService {
         String.join(" ", requestClientDto.getRedirectUris()),
         String.join(" ", validationResultDto.getGrantTypes()),
         String.join(" ", validationResultDto.getResponseTypes()),
-        String.join(" ", requestClientDto.getScopes()),
+        String.join(" ", requestClientDto.getScope()),
         registrationAccessToken,
         registrationClientUri,
         now.plusDays(CLIENT_LIFETIME),

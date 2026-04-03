@@ -16,7 +16,7 @@ import tokyomap.oauth.domain.services.api.v1.ApiException;
 public class SignUpService {
 
   private static final BCryptPasswordEncoder B_CRYPT_PASSWORD_ENCODER = new BCryptPasswordEncoder();
-  private static final String SCOPES = "openid profile email";
+  private static final String SCOPE = "openid profile email";
 
   private final UsrLogic usrLogic;
 
@@ -46,7 +46,7 @@ public class SignUpService {
     usr.setName(signUpForm.getName());
     usr.setPassword(B_CRYPT_PASSWORD_ENCODER.encode(signUpForm.getPassword()));
     usr.setPhoneNumberVerified(false);
-    usr.setScopes(SCOPES);
+    usr.setScope(SCOPE);
     usr.setRole(Role.ROLE_USER);
     usr.setCreatedAt(now);
     usr.setUpdatedAt(now);

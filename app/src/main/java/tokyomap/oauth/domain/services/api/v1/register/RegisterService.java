@@ -60,7 +60,7 @@ public abstract class RegisterService {
     this.validateClientName(requestClientDto.getClientName());
     this.validateClientUri(requestClientDto.getClientUri());
     this.validateRedirectUris(requestClientDto.getRedirectUris());
-    this.validateScopes(requestClientDto.getScopes());
+    this.validateScope(requestClientDto.getScope());
     String tokenEndpointAuthMethod = this.validateTokenEndpointAuthMethod(requestClientDto.getTokenEndpointAuthMethod());
 
     return this.validateAndResolveGrantAndResponseTypes(requestClientDto, tokenEndpointAuthMethod);
@@ -106,15 +106,15 @@ public abstract class RegisterService {
   }
 
   /**
-   * Validates scopes is present and non-empty.
-   * RFC 7591 §2: scopes define the access the client is requesting.
+   * Validates scope is present and non-empty.
+   * RFC 7591 §2: scope defines the access the client is requesting.
    *
-   * @param scopes
+   * @param scope
    * @throws ApiException if missing or empty
    */
-  private void validateScopes(String[] scopes) throws ApiException {
-    if (scopes == null || scopes.length == 0) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Scopes.");
+  private void validateScope(String[] scope) throws ApiException {
+    if (scope == null || scope.length == 0) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Scope.");
     }
   }
 

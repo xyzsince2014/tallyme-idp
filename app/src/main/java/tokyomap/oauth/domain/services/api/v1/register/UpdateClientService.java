@@ -28,7 +28,7 @@ public class UpdateClientService extends RegisterService {
 
   /**
    * Overrides execValidation() to only validate fields relevant to an update.
-   * client_uri, redirect_uris and scopes are intentionally excluded
+   * client_uri, redirect_uris and scope are intentionally excluded
    *   — the update flow keeps those existing values from the registered client and does not update them.
    *
    * @param requestClientDto
@@ -104,7 +104,7 @@ public class UpdateClientService extends RegisterService {
         String.join(" ", responseClientDto.getRedirectUris()),
         String.join(" ", validationResultDto.getGrantTypes()),
         String.join(" ", validationResultDto.getResponseTypes()),
-        String.join(" ", responseClientDto.getScopes()),
+        String.join(" ", responseClientDto.getScope()),
         RandomStringUtils.random(8, true, true),
         responseClientDto.getRegistrationClientUri(),
         now.plusDays(90),

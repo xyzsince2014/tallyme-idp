@@ -2,6 +2,7 @@ package tokyomap.oauth.dtos;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import javax.annotation.Nullable;
 
 public class RequestClientDto implements Serializable {
@@ -49,10 +50,10 @@ public class RequestClientDto implements Serializable {
   private String[] responseTypes;
 
   /**
-   * A list of scopes which the client can use when requesting tokens.
+   * A list of scope which the client can use when requesting tokens.
    * Todo: this is a string of spaced-separated values, as in the OAuth protocol.
    */
-  private String[] scopes;
+  private String[] scope;
 
   /**
    * A human-readable display name for the client.
@@ -185,12 +186,12 @@ public class RequestClientDto implements Serializable {
     this.responseTypes = responseTypes;
   }
 
-  public String[] getScopes() {
-    return scopes;
+  public String[] getScope() {
+    return scope;
   }
 
-  public void setScopes(String[] scopes) {
-    this.scopes = scopes;
+  public void setScope(String[] scope) {
+    this.scope = scope;
   }
 
   public String getClientName() {
@@ -310,10 +311,17 @@ public class RequestClientDto implements Serializable {
 
   @Override
   public String toString() {
-    return "clientId = " + this.clientId + ", clientSecret = " + this.clientSecret + ", clientName = " + this.clientName
-        + ", clientUri = " + this.clientUri + ", redirectUris = " + this.redirectUris.toString()
-        + ", grantTypes = " + this.grantTypes + ", responseTypes = " + this.responseTypes + ", tokenEndpointAuthMethod = " + this.tokenEndpointAuthMethod
-        + ", scopes = " + this.scopes + ", registrationAccessToken = " + this.registrationAccessToken
-        + ", registrationClientUri = " + this.registrationClientUri + ", expiresAt = " + this.expiresAt.toString();
+    return "clientId = " + this.clientId
+      + ", clientSecret = " + this.clientSecret
+      + ", clientName = " + this.clientName
+      + ", clientUri = " + this.clientUri
+      + ", redirectUris = " + Arrays.toString(this.redirectUris)
+      + ", grantTypes = " + Arrays.toString(this.grantTypes)
+      + ", responseTypes = " + Arrays.toString(this.responseTypes)
+      + ", tokenEndpointAuthMethod = " + this.tokenEndpointAuthMethod
+      + ", scope = " + Arrays.toString(this.scope)
+      + ", registrationAccessToken = " + this.registrationAccessToken
+      + ", registrationClientUri = " + this.registrationClientUri
+      + ", expiresAt = " + this.expiresAt.toString();
   }
 }

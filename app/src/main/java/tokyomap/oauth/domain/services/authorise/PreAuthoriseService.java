@@ -58,9 +58,9 @@ public class PreAuthoriseService {
       throw new InvalidPreAuthoriseException("Invalid Redirect URI", client.getClientUri());
     }
 
-    String[] requestedScopes = preAuthoriseCache.getScopes();
+    String[] requestedScope = preAuthoriseCache.getScope();
 
-    if(!Arrays.asList(client.getScopes().split(" ")).containsAll(Arrays.asList(requestedScopes))) {
+    if(!Arrays.asList(client.getScope().split(" ")).containsAll(Arrays.asList(requestedScope))) {
       throw new InvalidPreAuthoriseException("Invalid Scopes Requested", client.getClientUri());
     }
 
@@ -68,7 +68,7 @@ public class PreAuthoriseService {
       throw new InvalidPreAuthoriseException("No Nonce Given", client.getClientUri());
     }
 
-    return new ValidationResult(client, requestedScopes);
+    return new ValidationResult(client, requestedScope);
   }
 
   /**
@@ -87,11 +87,11 @@ public class PreAuthoriseService {
    */
   private class ValidationResult {
     private Client client;
-    private String[] requestedScopes;
+    private String[] requestedScope;
 
-    ValidationResult(Client client, String[] requestedScopes) {
+    ValidationResult(Client client, String[] requestedScope) {
       this.client = client;
-      this.requestedScopes = requestedScopes;
+      this.requestedScope = requestedScope;
     }
 
     Client getClient() {
@@ -99,7 +99,7 @@ public class PreAuthoriseService {
     }
 
     String[] getRequestedScope() {
-      return requestedScopes;
+      return requestedScope;
     }
   }
 }

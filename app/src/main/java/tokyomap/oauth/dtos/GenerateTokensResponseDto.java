@@ -10,7 +10,7 @@ public class GenerateTokensResponseDto extends ApiResponseDto implements Seriali
   private String accessToken;
   private String refreshToken;
   private String idToken;
-  private String scopes;
+  private String scope;
 
   public GenerateTokensResponseDto(String errorMessage) {
     super(errorMessage);
@@ -21,14 +21,14 @@ public class GenerateTokensResponseDto extends ApiResponseDto implements Seriali
    *
    * @param tokenType
    * @param accessToken
-   * @param scopes
+   * @param scope
    */
-  public GenerateTokensResponseDto(String tokenType, String accessToken, String scopes) {
+  public GenerateTokensResponseDto(String tokenType, String accessToken, String scope) {
     this.tokenType = tokenType;
     this.accessToken = accessToken;
     this.refreshToken = null;
     this.idToken = null;
-    this.scopes = scopes;
+    this.scope = scope;
   }
 
   /**
@@ -38,14 +38,16 @@ public class GenerateTokensResponseDto extends ApiResponseDto implements Seriali
    * @param accessToken
    * @param refreshToken
    * @param idToken
-   * @param scopes
+   * @param scope
    */
-  public GenerateTokensResponseDto(String tokenType, String accessToken, String refreshToken, String idToken, String scopes) {
+  public GenerateTokensResponseDto(
+    String tokenType, String accessToken, String refreshToken, String idToken, String scope
+  ) {
     this.tokenType = tokenType;
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.idToken = idToken;
-    this.scopes = scopes;
+    this.scope = scope;
   }
 
   public String getTokenType() {
@@ -80,11 +82,11 @@ public class GenerateTokensResponseDto extends ApiResponseDto implements Seriali
     this.idToken = idToken;
   }
 
-  public String getScopes() {
-    return scopes;
+  public String getScope() {
+    return scope;
   }
 
-  public void setScopes(String scope) {
-    this.scopes = scopes;
+  public void setScope(String scope) {
+    this.scope = scope;
   }
 }

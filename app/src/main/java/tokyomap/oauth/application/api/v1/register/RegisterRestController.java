@@ -2,14 +2,9 @@ package tokyomap.oauth.application.api.v1.register;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tokyomap.oauth.domain.entities.postgres.Client;
 import tokyomap.oauth.domain.services.api.v1.ApiException;
 import tokyomap.oauth.domain.services.api.v1.register.CheckRegistrationAccessTokenService;
@@ -17,14 +12,9 @@ import tokyomap.oauth.domain.services.api.v1.register.CheckRegistrationBasicAuth
 import tokyomap.oauth.domain.services.api.v1.register.RegisterClientService;
 import tokyomap.oauth.domain.services.api.v1.register.UnregisterClientService;
 import tokyomap.oauth.domain.services.api.v1.register.UpdateClientService;
-import tokyomap.oauth.dtos.ClientValidationResultDto;
-import tokyomap.oauth.dtos.ReadClientResponseDto;
-import tokyomap.oauth.dtos.RegisterClientRequestDto;
-import tokyomap.oauth.dtos.RegisterClientResponseDto;
-import tokyomap.oauth.dtos.ResponseClientDto;
-import tokyomap.oauth.dtos.UnregisterClientRequestDto;
-import tokyomap.oauth.dtos.UpdateClientRequestDto;
-import tokyomap.oauth.dtos.UpdateClientResponseDto;
+import tokyomap.oauth.dtos.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/register")
@@ -54,21 +44,28 @@ public class RegisterRestController {
   /**
    * Registers the given client.
    *
-   * @param requestDto
-   * @return RegisterClientResponseDto
+   * @param authorization
+   * @param params
+   * @return
    */
-  @RequestMapping(method = RequestMethod.POST, headers = {"Accept=application/json", "Content-Type=application/json"})
+  @RequestMapping(
+    method = RequestMethod.POST,
+    consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+    produces = MediaType.APPLICATION_JSON_VALUE
+  )
   public ResponseEntity<RegisterClientResponseDto> registerClient(
     @RequestHeader("Authorization") String authorization,
-    @RequestBody RegisterClientRequestDto requestDto
+    @RequestParam Map<String, String> params
   ) {
     try {
       // validate the Basic Auth header
       this.checkRegistrationBasicAuthService.execute(authorization);
 
+      RequestClientDto requestClientDto = this.mapParamsToRegisterClientRequestDto(params);
+
       // client registration
-      ClientValidationResultDto resultDto = this.registerClientService.execValidation(requestDto.getClient());
-      Client clientRegistered = this.registerClientService.execute(requestDto.getClient(), resultDto);
+      ClientValidationResultDto resultDto = this.registerClientService.execValidation(requestClientDto);
+      Client clientRegistered = this.registerClientService.execute(requestClientDto, resultDto);
       ResponseClientDto responseClientDto = this.convertClientToResponseClientDto(clientRegistered);
       return ResponseEntity.status(HttpStatus.CREATED).body(new RegisterClientResponseDto(responseClientDto));
 
@@ -79,6 +76,40 @@ public class RegisterRestController {
     } catch (Exception e) {
       return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * Maps form params to RequestClientDto.
+   *
+   * @param params
+   * @return
+   */
+  private RequestClientDto mapParamsToRegisterClientRequestDto(Map<String, String> params) {
+
+    RequestClientDto requestClientDto = new RequestClientDto();
+
+    requestClientDto.setClientName(params.get("client_name"));
+    requestClientDto.setClientUri(params.get("client_uri"));
+    requestClientDto.setTokenEndpointAuthMethod(params.get("token_endpoint_auth_method"));
+
+    requestClientDto.setScope(splitParam(params, "scope"));
+    requestClientDto.setRedirectUris(splitParam(params, "redirect_uris"));
+    requestClientDto.setResponseTypes(splitParam(params, "response_types"));
+    requestClientDto.setGrantTypes(splitParam(params, "grant_types"));
+
+    return requestClientDto;
+  }
+
+  /**
+   * Splits the param string to string[].
+   *
+   * @param params
+   * @param key
+   * @return
+   */
+  private String[] splitParam(Map<String, String> params, String key) {
+    String val = params.get(key);
+    return (val != null && !val.isEmpty()) ? val.split(" ") : null;
   }
 
   /**
@@ -186,7 +217,7 @@ public class RegisterRestController {
     responseClientDto.setGrantTypes(client.getGrantTypes().split(" "));
     responseClientDto.setResponseTypes(client.getResponseTypes().split(" "));
     responseClientDto.setTokenEndpointAuthMethod(client.getTokenEndpointAuthMethod());
-    responseClientDto.setScopes(client.getScopes().split(" "));
+    responseClientDto.setScope(client.getScope().split(" "));
     responseClientDto.setRegistrationAccessToken(client.getRegistrationAccessToken());
     responseClientDto.setRegistrationClientUri(client.getRegistrationClientUri());
     responseClientDto.setCreatedAt(client.getCreatedAt());

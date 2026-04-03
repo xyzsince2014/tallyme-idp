@@ -56,7 +56,7 @@ public class ResponseClientDto extends ApiResponseDto implements Serializable {
 
   private String tokenEndpointAuthMethod;
 
-  private String[] scopes;
+  private String[] scope;
 
   @Nullable
   private String registrationAccessToken;
@@ -205,12 +205,12 @@ public class ResponseClientDto extends ApiResponseDto implements Serializable {
     this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
   }
 
-  public String[] getScopes() {
-    return scopes;
+  public String[] getScope() {
+    return scope;
   }
 
-  public void setScopes(String[] scopes) {
-    this.scopes = scopes;
+  public void setScope(String[] scope) {
+    this.scope = scope;
   }
 
   @Nullable
@@ -247,11 +247,18 @@ public class ResponseClientDto extends ApiResponseDto implements Serializable {
 
   @Override
   public String toString() {
-    return "clientId = " + this.clientId + ", clientSecret = " + this.clientSecret + ", clientName = " + this.clientName
-        + ", clientUri = " + this.clientUri + ", redirectUris = " + this.redirectUris.toString()
-        + ", grantTypes = " + this.grantTypes + ", responseTypes = " + this.responseTypes + ", tokenEndpointAuthMethod = " + this.tokenEndpointAuthMethod
-        + ", scopes = " + this.scopes + ", registrationAccessToken = " + this.registrationAccessToken
-        + ", registrationClientUri = " + this.registrationClientUri + ", createdAt = " + this.createdAt
-        + ", expiresAt = " + this.expiresAt.toString();
+    return "clientId = " + this.clientId
+      + ", clientSecret = " + this.clientSecret
+      + ", clientName = " + this.clientName
+      + ", clientUri = " + this.clientUri
+      + ", redirectUris = " + this.redirectUris.toString()
+      + ", grantTypes = " + this.grantTypes
+      + ", responseTypes = " + this.responseTypes
+      + ", tokenEndpointAuthMethod = " + this.tokenEndpointAuthMethod
+      + ", scope = " + this.scope
+      + ", registrationAccessToken = " + this.registrationAccessToken
+      + ", registrationClientUri = " + this.registrationClientUri
+      + ", createdAt = " + this.createdAt
+      + ", expiresAt = " + this.expiresAt.toString();
   }
 }

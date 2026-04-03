@@ -146,20 +146,20 @@ public class TokenLogic {
    * A refresh token is always issued because these flows act on behalf of a resource owner (sub is present).
    *
    * @param clientId the client that requested the tokens
-   * @param sub      the resource owner's subject identifier
-   * @param scopes   the granted scopes
-   * @param nonce    the nonce from the original authorisation request (used in the ID token); may be null
+   * @param sub the resource owner's subject identifier
+   * @param scope the granted scope
+   * @param nonce the nonce from the original authorisation request (used in the ID token); may be null
    * @return GenerateTokensResponseDto containing access token, refresh token, and ID token
    * @throws Exception
    */
   public GenerateTokensResponseDto generateTokensWithRefreshToken(
-    String clientId, String sub, String[] scopes, String nonce
+    String clientId, String sub, String[] scope, String nonce
   ) throws Exception {
 
     LocalDateTime now = LocalDateTime.now();
 
-    String accessToken = this.createSignedJWT(sub, scopes, clientId, now, ACCESS_TOKEN_LIFETIME);
-    String refreshToken = this.createSignedJWT(sub, scopes, clientId, now, REFRESH_TOKEN_LIFETIME);
+    String accessToken = this.createSignedJWT(sub, scope, clientId, now, ACCESS_TOKEN_LIFETIME);
+    String refreshToken = this.createSignedJWT(sub, scope, clientId, now, REFRESH_TOKEN_LIFETIME);
 
     // generate an id token as well because a resource owner (sub) is always present in these flows
     String idToken = this.createIdJWT(sub, clientId, nonce, now, ID_TOKEN_LIFETIME, now);
@@ -176,7 +176,7 @@ public class TokenLogic {
       registeredAccessTokenEntity.getAccessToken(),
       registeredRefreshTokenEntity.getRefreshToken(),
       idToken,
-      String.join(" ", scopes)
+      String.join(" ", scope)
     );
   }
 
@@ -187,24 +187,24 @@ public class TokenLogic {
    * No ID token is issued neither.
    *
    * @param clientId the client that requested the token
-   * @param scopes   the granted scopes
+   * @param scope the granted scope
    * @return GenerateTokensResponseDto containing only an access token (refresh token and ID token are null)
    * @throws Exception
    */
-  public GenerateTokensResponseDto generateAccessToken(String clientId, String[] scopes) throws Exception {
+  public GenerateTokensResponseDto generateAccessToken(String clientId, String[] scope) throws Exception {
 
     LocalDateTime now = LocalDateTime.now();
 
     // sub is the client itself in the Client Credentials Flow (no resource owner)
     String accessToken =
-      this.createSignedJWT(clientId, scopes, clientId, now, ACCESS_TOKEN_LIFETIME);
+      this.createSignedJWT(clientId, scope, clientId, now, ACCESS_TOKEN_LIFETIME);
 
     AccessToken registeredAccessTokenEntity =
       this.accessTokenRepository.saveAndFlush(new AccessToken(accessToken, now, now));
 
     // todo: scope must not be sent back to the client in production
     return new GenerateTokensResponseDto(
-      TOKEN_TYPE_BEARER, registeredAccessTokenEntity.getAccessToken(), String.join(" ", scopes)
+      TOKEN_TYPE_BEARER, registeredAccessTokenEntity.getAccessToken(), String.join(" ", scope)
     );
   }
 
@@ -229,7 +229,7 @@ public class TokenLogic {
    * Creates a serialised signed JWT.
    *
    * @param sub      the subject (resource owner's identifier, or clientId for CCF)
-   * @param scopes   the granted scopes
+   * @param scope   the granted scope
    * @param clientId the client the token is issued to
    * @param iat      the issued-at timestamp
    * @param minutes  the token lifetime in minutes
@@ -237,13 +237,15 @@ public class TokenLogic {
    * @throws Exception
    */
   private String createSignedJWT(
-    String sub, String[] scopes, String clientId, LocalDateTime iat, long minutes
+    String sub, String[] scope, String clientId, LocalDateTime iat, long minutes
   ) throws Exception {
 
     JWSHeader jwsHeader = this.createJWSHeader();
 
     // a cryptographically random value that uniquely identifies this token instance
     String jti = RandomStringUtils.random(8, true, true);
+
+    String joinedScope = (scope != null) ? String.join(" ", scope) : "";
 
     // payload
     JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
@@ -253,7 +255,7 @@ public class TokenLogic {
       .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the issued-at timestamp of the token in seconds from 1 Jan 1970 (GMT)
       .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the expiration time
       .claim("jti", jti) // the unique identifier of the token, a value unique to each token created by the issuer
-      .claim("scopes", scopes)
+      .claim("scope", joinedScope)
       .claim("clientId", clientId)
       .build();
 

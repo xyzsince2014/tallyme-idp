@@ -75,8 +75,8 @@ public class Usr implements Serializable {
   @Column(name = "phone_number_verified")
   private Boolean phoneNumberVerified;
 
-  @Column(name = "scopes")
-  private String scopes;
+  @Column(name = "scope")
+  private String scope;
 
   @Enumerated(EnumType.STRING)
   private Role role;
@@ -229,12 +229,12 @@ public class Usr implements Serializable {
     this.phoneNumberVerified = phoneNumberVerified;
   }
 
-  public String getScopes() {
-    return scopes;
+  public String getScope() {
+    return scope;
   }
 
-  public void setScopes(String scopes) {
-    this.scopes = scopes;
+  public void setScope(String scope) {
+    this.scope = scope;
   }
 
   public Role getRole() { return role; }
@@ -259,9 +259,18 @@ public class Usr implements Serializable {
 
   @Override
   public String toString() {
-    return "sun = " + this.sub + ", name = " + this.name + ", familyName = " + this.familyName
-        + ", givenName = " + this.givenName + ", middleName = " + this.middleName + ", nickname = " + this.nickname
-        + ", preferredUsername = " + this.preferredUsername + ", profile = " + this.profile + ", picture = " + this.picture
-        + ", website = " + this.website + ", zoneinfo = " + this.zoneinfo + ", locale = " + this.locale + ", email = " + this.email;
+    return "sun = " + this.sub
+      + ", name = " + this.name
+      + ", familyName = " + this.familyName
+      + ", givenName = " + this.givenName
+      + ", middleName = " + this.middleName
+      + ", nickname = " + this.nickname
+      + ", preferredUsername = " + this.preferredUsername
+      + ", profile = " + this.profile
+      + ", picture = " + this.picture
+      + ", website = " + this.website
+      + ", zoneinfo = " + this.zoneinfo
+      + ", locale = " + this.locale
+      + ", email = " + this.email;
   }
 }
