@@ -33,11 +33,13 @@ public class PostgresJpaConfig {
   @Value("${hibernate.hbm2ddl.auto}") private String hbm2ddlAuto;
   @Value("${hibernate.show_sql}") private String showSql;
   @Value("${hibernate.format_sql}") private String formatSql;
+  @Value("${hibernate.default_schema:oauth}") private String defaultSchema;
 
   @Value("${spring.jpa.packages.entities}") private String packagesToScan;
 
   /**
-   * the data source used by JPA.
+   * The data source used by JPA.
+   *
    * @return BasicDataSource
    */
   @Bean(destroyMethod = "close") // invoke BasicDataSource.close() on destroy to release the data source
@@ -59,6 +61,7 @@ public class PostgresJpaConfig {
    * the EntityManagerFactory which Spring Data JPA needs on the DI container.
    * EntityManager synchronises entities in PersistenceContexts (entities managed by the EntityManager) and RDB by executing SQL queries.
    * Note that a PersistenceContext is made for every transaction.
+   *
    * @return LocalContainerEntityManagerFactoryBean
    */
   @Bean
@@ -68,6 +71,9 @@ public class PostgresJpaConfig {
     jpaProperties.setProperty("hibernate.hbm2ddl.auto", this.hbm2ddlAuto);
     jpaProperties.setProperty("hibernate.show_sql", this.showSql);
     jpaProperties.setProperty("hibernate.format_sql", this.formatSql);
+
+    // avoid @Table(schema = "oauth") in all entities
+    jpaProperties.setProperty("hibernate.default_schema", this.defaultSchema);
 
     LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();
     entityManagerFactory.setDataSource(dataSource);

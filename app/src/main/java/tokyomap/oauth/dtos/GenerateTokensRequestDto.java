@@ -28,6 +28,7 @@ public class GenerateTokensRequestDto implements Serializable {
   @Nullable
   private String refreshToken;
 
+  // todo: rename to `scope`
   @Nullable
   private String[] scopes;
 
@@ -104,8 +105,10 @@ public class GenerateTokensRequestDto implements Serializable {
 
   @Override
   public String toString() {
-    return "grantType = " + this.grantType + ", code = " + this.code + ", redirectUri = " + this.redirectUri
-        + ", codeVerifier = " + this.codeVerifier + ", clientId = " + this.clientId + ", clientSecret = " + this.clientSecret
-        + ", refreshToken = " + this.refreshToken + ", String.join(\" \", this.scopes) = " + String.join(" ", this.scopes);
+    return "grantType = " + this.grantType
+      + ", code = " + this.code
+      + ", redirectUri = " + this.redirectUri
+      + ", clientId = " + this.clientId
+      + ", String.join(\" \", this.scopes) = " + String.join(" ", this.scopes);
   }
 }
