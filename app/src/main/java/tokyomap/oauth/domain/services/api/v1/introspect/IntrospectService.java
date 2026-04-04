@@ -21,16 +21,16 @@ import tokyomap.oauth.utils.Decorder;
 @Service
 public class IntrospectService {
 
-  // todo: use global constants
-  private static final String ERROR_MESSAGE_INVALID_RESOURCE = "Invalid Resource";
-  private static final String ERROR_MESSAGE_NO_AUTHORIZATION_HEADER = "No Authorization Header";
-
   private final TokenScrutinyService tokenScrutinyService;
   private final Decorder decorder;
   private final ResourceLogic resourceLogic;
   private final TokenLogic tokenLogic;
+
+  private final String errorInvalidResource;
+  private final String errorNoAuthorizationHeader;
   private final String authServerHost;
   private final String audience;
+
 
   @Autowired
   public IntrospectService(
@@ -38,6 +38,8 @@ public class IntrospectService {
       Decorder decorder,
       ResourceLogic resourceLogic,
       TokenLogic tokenLogic,
+      @Value("${error.invalid-resource}") String errorInvalidResource,
+      @Value("${error.no-authorization-header}") String errorNoAuthorizationHeader,
       @Value("${docker.container.auth}") String authServerHost,
       @Value("${docker.container.resource}") String audience
   ) {
@@ -45,6 +47,8 @@ public class IntrospectService {
     this.decorder = decorder;
     this.resourceLogic = resourceLogic;
     this.tokenLogic = tokenLogic;
+    this.errorInvalidResource = errorInvalidResource;
+    this.errorNoAuthorizationHeader = errorNoAuthorizationHeader;
     this.authServerHost = authServerHost;
     this.audience = audience;
   }
@@ -62,12 +66,12 @@ public class IntrospectService {
     // fetch resourceId, resourceSecret from the Authorization header
     CredentialsDto credentialsDto = this.decorder.decodeCredentials(authorization);
     if (credentialsDto == null) {
-      throw new ApiException(HttpStatus.UNAUTHORIZED, ERROR_MESSAGE_NO_AUTHORIZATION_HEADER);
+      throw new ApiException(HttpStatus.UNAUTHORIZED, errorNoAuthorizationHeader);
     }
 
     Resource resource = this.resourceLogic.getResourceByResourceId(credentialsDto.getId());
     if (resource == null || !resource.getResourceSecret().equals(credentialsDto.getSecret())) {
-      throw new ApiException(HttpStatus.UNAUTHORIZED, ERROR_MESSAGE_INVALID_RESOURCE);
+      throw new ApiException(HttpStatus.UNAUTHORIZED, errorInvalidResource);
     }
 
     // RFC 7662 §2.2: a token which fails signature or format checks is simply inactive — not an error response

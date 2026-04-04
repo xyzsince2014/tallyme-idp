@@ -3,6 +3,7 @@ package tokyomap.oauth.domain.services.api.v1.register;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import tokyomap.oauth.domain.services.api.v1.ApiException;
 import tokyomap.oauth.dtos.ClientValidationResultDto;
@@ -10,44 +11,52 @@ import tokyomap.oauth.dtos.RequestClientDto;
 
 public abstract class RegisterService {
 
-  /* todo: use global constants */
-  private static final String RESPONSE_TYPE_AUTHORISATION_CODE = "code";
+  private final String responseTypeCode;
+  protected final String[] responseTypes;
+  private final String grantTypeAuthorizationCode;
+  protected final String[] grantTypes;
+  protected final String tokenEndpointAuthMethodDefault;
+  protected final String[] tokenEndpointAuthMethods;
+  protected final String registrationEndpoint;
+  protected final String errorInvalidClientName;
+  private final String errorInvalidClientUri;
+  private final String errorInvalidRedirectUris;
+  private final String errorInvalidScope;
+  protected final String errorInvalidTokenEndpointAuthMethod;
+  private final String errorInvalidGrantTypes;
+  private final String errorInvalidResponseTypes;
 
-  protected static final String[] RESPONSE_TYPES = new String[] {
-    RESPONSE_TYPE_AUTHORISATION_CODE,
-  };
-
-  private static final String GRANT_TYPE_AUTHORISATION_CODE = "authorization_code";
-  private static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
-  private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
-
-  protected static final String[] GRANT_TYPES = new String[] {
-    GRANT_TYPE_AUTHORISATION_CODE,
-    GRANT_TYPE_REFRESH_TOKEN,
-    GRANT_TYPE_CLIENT_CREDENTIALS
-  };
-
-  // RPs' client credentials are given to the token endpoint by
-  // none: not given
-  // client_secret_basic: in Authorization header
-  // client_secret_post: in POST body
-  // client_secret_jwt, private_key_jwt: in jwt
-  private static final String TOKEN_ENDPOINT_AUTH_METHOD_NONE = "none";
-  private static final String TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC = "client_secret_basic";
-  private static final String TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_POST = "client_secret_post";
-  private static final String TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_JWT = "client_secret_jwt";
-  private static final String TOKEN_ENDPOINT_AUTH_METHOD_PRIVATE_KEY_JWT = "private_key_jwt";
-
-  protected static final String[] TOKEN_ENDPOINT_AUTH_METHODS = new String[] {
-    TOKEN_ENDPOINT_AUTH_METHOD_NONE,
-    TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC,
-    TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_POST,
-    TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_JWT,
-    TOKEN_ENDPOINT_AUTH_METHOD_PRIVATE_KEY_JWT
-  };
-
-  // todo: use an environmental variable
-  protected static final String REGISTRATION_ENDPOINT = "https://localhost/auth/api/v1/register";
+  public RegisterService(
+    @Value("${oauth.response.type.code}") String responseTypeCode,
+    @Value("#{'${oauth.response.types}'.split(',')}") String[] responseTypes,
+    @Value("${oauth.grant.type.authorization-code}") String grantTypeAuthorizationCode,
+    @Value("#{'${oauth.grant.types}'.split(',')}") String[] grantTypes,
+    @Value("${oauth.token-endpoint.auth.method.default}") String tokenEndpointAuthMethodDefault,
+    @Value("#{'${oauth.token-endpoint.auth.methods}'.split(',')}") String[] tokenEndpointAuthMethods,
+    @Value("${registration.endpoint}") String registrationEndpoint,
+    @Value("${error.invalid-client-name}") String errorInvalidClientName,
+    @Value("${error.invalid-client-uri}") String errorInvalidClientUri,
+    @Value("${error.invalid-redirect-uris}") String errorInvalidRedirectUris,
+    @Value("${error.invalid-scope}") String errorInvalidScope,
+    @Value("${error.invalid-token-endpoint-auth-method}") String errorInvalidTokenEndpointAuthMethod,
+    @Value("${error.invalid-grant-types}") String errorInvalidGrantTypes,
+    @Value("${error.invalid-response-types}") String errorInvalidResponseTypes
+  ) {
+    this.responseTypeCode = responseTypeCode;
+    this.responseTypes = responseTypes;
+    this.grantTypeAuthorizationCode = grantTypeAuthorizationCode;
+    this.grantTypes = grantTypes;
+    this.tokenEndpointAuthMethodDefault = tokenEndpointAuthMethodDefault;
+    this.tokenEndpointAuthMethods = tokenEndpointAuthMethods;
+    this.registrationEndpoint = registrationEndpoint;
+    this.errorInvalidClientName = errorInvalidClientName;
+    this.errorInvalidClientUri = errorInvalidClientUri;
+    this.errorInvalidRedirectUris = errorInvalidRedirectUris;
+    this.errorInvalidScope = errorInvalidScope;
+    this.errorInvalidTokenEndpointAuthMethod = errorInvalidTokenEndpointAuthMethod;
+    this.errorInvalidGrantTypes = errorInvalidGrantTypes;
+    this.errorInvalidResponseTypes = errorInvalidResponseTypes;
+  }
 
   /**
    * Validates the given client requesting its registration.
@@ -75,7 +84,7 @@ public abstract class RegisterService {
    */
   private void validateClientName(String clientName) throws ApiException {
     if (clientName == null || clientName.trim().isEmpty()) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Client Name.");
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidClientName);
     }
   }
 
@@ -88,7 +97,7 @@ public abstract class RegisterService {
    */
   private void validateClientUri(String clientUri) throws ApiException {
     if (clientUri == null || clientUri.trim().isEmpty()) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Client Uri.");
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidClientUri);
     }
   }
 
@@ -101,7 +110,7 @@ public abstract class RegisterService {
    */
   private void validateRedirectUris(String[] redirectUris) throws ApiException {
     if (redirectUris == null || redirectUris.length == 0) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Redirect Uris.");
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidRedirectUris);
     }
   }
 
@@ -114,7 +123,7 @@ public abstract class RegisterService {
    */
   private void validateScope(String[] scope) throws ApiException {
     if (scope == null || scope.length == 0) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Scope.");
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidScope);
     }
   }
 
@@ -128,11 +137,11 @@ public abstract class RegisterService {
    * @throws ApiException if the value is not supported
    */
   private String validateTokenEndpointAuthMethod(String tokenEndpointAuthMethod) throws ApiException {
-    String resolved = tokenEndpointAuthMethod == null ? TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC : tokenEndpointAuthMethod;
-    if (Arrays.stream(TOKEN_ENDPOINT_AUTH_METHODS).anyMatch(authMethod -> authMethod.equals(resolved))) {
+    String resolved = tokenEndpointAuthMethod == null ? tokenEndpointAuthMethodDefault : tokenEndpointAuthMethod;
+    if (Arrays.stream(tokenEndpointAuthMethods).anyMatch(authMethod -> authMethod.equals(resolved))) {
       return resolved;
     }
-    throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid tokenEndpointAuthMethod.");
+    throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidTokenEndpointAuthMethod);
   }
 
   /**
@@ -152,8 +161,8 @@ public abstract class RegisterService {
     // RFC 7591 §2: if neither is provided, default to `authorization_code` grant with `code` response type.
     if (requestClientDto.getGrantTypes() == null && requestClientDto.getResponseTypes() == null) {
       return new ClientValidationResultDto(
-        new String[] {GRANT_TYPE_AUTHORISATION_CODE},
-        new String[] {RESPONSE_TYPE_AUTHORISATION_CODE},
+        new String[] {grantTypeAuthorizationCode},
+        new String[] {responseTypeCode},
         tokenEndpointAuthMethod
       );
     }
@@ -162,20 +171,20 @@ public abstract class RegisterService {
     // `code` response type implies `authorization_code` grant; otherwise grant_types is empty.
     if (requestClientDto.getGrantTypes() == null) {
       this.validateResponseTypes(requestClientDto.getResponseTypes());
-      String[] grantTypes = Arrays.asList(requestClientDto.getResponseTypes()).contains(RESPONSE_TYPE_AUTHORISATION_CODE)
-          ? new String[] {GRANT_TYPE_AUTHORISATION_CODE}
+      String[] resolvedGrantTypes = Arrays.asList(requestClientDto.getResponseTypes()).contains(responseTypeCode)
+          ? new String[] {grantTypeAuthorizationCode}
           : new String[] {};
-      return new ClientValidationResultDto(grantTypes, requestClientDto.getResponseTypes(), tokenEndpointAuthMethod);
+      return new ClientValidationResultDto(resolvedGrantTypes, requestClientDto.getResponseTypes(), tokenEndpointAuthMethod);
     }
 
     // if only grant_types is given, validate it then infer response_types:
     // `authorization_code` grant implies `code` response type; otherwise response_types is empty.
     if (requestClientDto.getResponseTypes() == null) {
       this.validateGrantTypes(requestClientDto.getGrantTypes());
-      String[] responseTypes = Arrays.asList(requestClientDto.getGrantTypes()).contains(GRANT_TYPE_AUTHORISATION_CODE)
-          ? new String[] {RESPONSE_TYPE_AUTHORISATION_CODE}
+      String[] resolvedResponseTypes = Arrays.asList(requestClientDto.getGrantTypes()).contains(grantTypeAuthorizationCode)
+          ? new String[] {responseTypeCode}
           : new String[] {};
-      return new ClientValidationResultDto(requestClientDto.getGrantTypes(), responseTypes, tokenEndpointAuthMethod);
+      return new ClientValidationResultDto(requestClientDto.getGrantTypes(), resolvedResponseTypes, tokenEndpointAuthMethod);
     }
 
     // both are explicitly provided — validate then enforce consistency between the two.
@@ -202,13 +211,13 @@ public abstract class RegisterService {
     List<String> responseTypeList = new ArrayList<>(Arrays.asList(responseTypes));
 
     // `authorization_code` grant present but `code` missing — append `code`.
-    if (grantTypeList.contains(GRANT_TYPE_AUTHORISATION_CODE) && !responseTypeList.contains(RESPONSE_TYPE_AUTHORISATION_CODE)) {
-      responseTypeList.add(RESPONSE_TYPE_AUTHORISATION_CODE);
+    if (grantTypeList.contains(grantTypeAuthorizationCode) && !responseTypeList.contains(responseTypeCode)) {
+      responseTypeList.add(responseTypeCode);
     }
 
     // `code` response type present but `authorization_code` grant missing — append `authorization_code`.
-    if (responseTypeList.contains(RESPONSE_TYPE_AUTHORISATION_CODE) && !grantTypeList.contains(GRANT_TYPE_AUTHORISATION_CODE)) {
-      grantTypeList.add(GRANT_TYPE_AUTHORISATION_CODE);
+    if (responseTypeList.contains(responseTypeCode) && !grantTypeList.contains(grantTypeAuthorizationCode)) {
+      grantTypeList.add(grantTypeAuthorizationCode);
     }
 
     return new ClientValidationResultDto(
@@ -223,8 +232,8 @@ public abstract class RegisterService {
    * @throws ApiException if any value is not supported
    */
   protected void validateGrantTypes(String[] grantTypes) throws ApiException {
-    if (!Arrays.asList(GRANT_TYPES).containsAll(Arrays.asList(grantTypes))) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Grant Types");
+    if (!Arrays.asList(this.grantTypes).containsAll(Arrays.asList(grantTypes))) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidGrantTypes);
     }
   }
 
@@ -235,8 +244,8 @@ public abstract class RegisterService {
    * @throws ApiException if any value is not supported
    */
   protected void validateResponseTypes(String[] responseTypes) throws ApiException {
-    if (!Arrays.asList(RESPONSE_TYPES).containsAll(Arrays.asList(responseTypes))) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Response Types");
+    if (!Arrays.asList(this.responseTypes).containsAll(Arrays.asList(responseTypes))) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidResponseTypes);
     }
   }
 }

@@ -4,6 +4,7 @@ import com.nimbusds.jose.util.Base64URL;
 import java.security.MessageDigest;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,28 +24,41 @@ import tokyomap.oauth.utils.Decorder;
 @Service
 public class AuthorisationCodeFlowService extends TokenService<ProAuthoriseCache> {
 
-  // todo: use global constants
-  private static final String CODE_CHALLENGE_METHOD = "S256"; // RFC 7636
-
-  private static final String ERROR_MESSAGE_INVALID_CODE = "Invalid Authorisation Code";
-  private static final String ERROR_MESSAGE_INVALID_CLIENT_ID = "Invalid Client Id";
-  private static final String ERROR_MESSAGE_INVALID_CODE_CHALLENGE = "Invalid Code Challenge";
-  private static final String ERROR_MESSAGE_INVALID_CODE_CHALLENGE_METHOD = "Invalid Code Challenge Method";
-  private static final String ERROR_MESSAGE_NO_MATCHING_USER = "No Matching User";
-
   private final RedisLogic redisLogic;
   private final TokenLogic tokenLogic;
   private final UsrLogic usrLogic;
 
+  private final String codeChallengeMethod; // RFC 7636
+  private final String errorInvalidCode;
+  private final String errorInvalidCodeChallenge;
+  private final String errorInvalidCodeChallengeMethod;
+  private final String errorNoMatchingUser;
+
   @Autowired
   public AuthorisationCodeFlowService(
-    ClientLogic clientLogic, Decorder decorder, RedisLogic redisLogic, TokenLogic tokenLogic, UsrLogic usrLogic
-
+    ClientLogic clientLogic,
+    Decorder decorder,
+    RedisLogic redisLogic,
+    TokenLogic tokenLogic,
+    UsrLogic usrLogic,
+    @Value("${error.invalid-client-id}") String errorInvalidClientId,
+    @Value("${error.no-matching-client}") String errorNoMatchingClient,
+    @Value("${error.no-matching-client-secret}") String errorNoMatchingClientSecret,
+    @Value("${oauth.pkce.code-challenge-method}") String codeChallengeMethod,
+    @Value("${error.invalid-code}") String errorInvalidCode,
+    @Value("${error.invalid-code-challenge}") String errorInvalidCodeChallenge,
+    @Value("${error.invalid-code-challenge-method}") String errorInvalidCodeChallengeMethod,
+    @Value("${error.no-matching-user}") String errorNoMatchingUser
   ) {
-    super(clientLogic, decorder);
+    super(clientLogic, decorder, errorInvalidClientId, errorNoMatchingClient, errorNoMatchingClientSecret);
     this.redisLogic = redisLogic;
     this.tokenLogic = tokenLogic;
     this.usrLogic = usrLogic;
+    this.codeChallengeMethod = codeChallengeMethod;
+    this.errorInvalidCode = errorInvalidCode;
+    this.errorInvalidCodeChallenge = errorInvalidCodeChallenge;
+    this.errorInvalidCodeChallengeMethod = errorInvalidCodeChallengeMethod;
+    this.errorNoMatchingUser = errorNoMatchingUser;
   }
 
   /**
@@ -63,23 +77,23 @@ public class AuthorisationCodeFlowService extends TokenService<ProAuthoriseCache
     // look up the ProAuthoriseCache by the given code — if null, the code is invalid or already consumed.
     ProAuthoriseCache proAuthoriseCache = this.redisLogic.getProAuthoriseCache(requestDto.getCode());
     if (proAuthoriseCache == null) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_CODE);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidCode);
     }
 
     // verify the client_id in the request matches the one the code was issued to — prevents a client from redeeming another client's code.
     if (!credentialsDto.getId().equals(proAuthoriseCache.getPreAuthoriseCache().getClientId())) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_CLIENT_ID);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidClientId);
     }
 
     // PKCE: verify code_challenge was present in the original authorisation request — rejects clients that skipped PKCE.
     if (proAuthoriseCache.getPreAuthoriseCache().getCodeChallenge() == null) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_CODE_CHALLENGE);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidCodeChallenge);
     }
 
     // PKCE: verify the code_challenge_method is SHA256 — the only supported method.
-    String codeChallengeMethod = proAuthoriseCache.getPreAuthoriseCache().getCodeChallengeMethod();
-    if (!codeChallengeMethod.equals(CODE_CHALLENGE_METHOD)) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_CODE_CHALLENGE_METHOD);
+    String codeChallengeMethodInCache = proAuthoriseCache.getPreAuthoriseCache().getCodeChallengeMethod();
+    if (!codeChallengeMethodInCache.equals(codeChallengeMethod)) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidCodeChallengeMethod);
     }
 
     // PKCE: recreate code_challenge from the incoming code_verifier, and verify it matches the cached code_challenge
@@ -88,7 +102,7 @@ public class AuthorisationCodeFlowService extends TokenService<ProAuthoriseCache
     md.update(requestDto.getCodeVerifier().getBytes());
     String codeChallenge = Base64URL.encode(md.digest()).toString();
     if (!proAuthoriseCache.getPreAuthoriseCache().getCodeChallenge().equals(codeChallenge)) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_CODE_CHALLENGE);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidCodeChallenge);
     }
 
     return new TokenValidationResultDto(credentialsDto.getId(), proAuthoriseCache, requestDto.getCode());
@@ -108,7 +122,7 @@ public class AuthorisationCodeFlowService extends TokenService<ProAuthoriseCache
 
     Usr usr = this.usrLogic.getUsrBySub(tokenValidationResultDto.getPayload().getSub());
     if(usr == null) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_NO_MATCHING_USER);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorNoMatchingUser);
     }
 
     GenerateTokensResponseDto responseDto = this.tokenLogic.generateTokensWithRefreshToken(

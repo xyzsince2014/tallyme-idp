@@ -5,21 +5,26 @@ import java.util.Base64;
 import java.util.Base64.Encoder;
 import org.apache.commons.codec.Charsets;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tokyomap.oauth.domain.logics.RsaPublicKeyLogic;
 
 @Service
 public class RetrieveRsaPublicKeyService {
 
-  private static final String FORMAT_RSA_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----%n%s%n-----END PUBLIC KEY-----%n";
-
   private final RsaPublicKeyLogic rsaPublicKeyLogic;
   private final Encoder encoder;
 
+  private final String formatRsaPublicKey;
+
   @Autowired
-  public RetrieveRsaPublicKeyService(RsaPublicKeyLogic rsaPublicKeyLogic) {
+  public RetrieveRsaPublicKeyService(
+    RsaPublicKeyLogic rsaPublicKeyLogic,
+    @Value("${rsa.public-key-format}") String formatRsaPublicKey
+  ) {
     this.rsaPublicKeyLogic = rsaPublicKeyLogic;
     this.encoder = Base64.getEncoder();
+    this.formatRsaPublicKey = formatRsaPublicKey;
   }
 
   /**
@@ -43,6 +48,6 @@ public class RetrieveRsaPublicKeyService {
       index += len;
     }
 
-    return String.format(FORMAT_RSA_PUBLIC_KEY, sb);
+    return String.format(formatRsaPublicKey, sb);
   }
 }

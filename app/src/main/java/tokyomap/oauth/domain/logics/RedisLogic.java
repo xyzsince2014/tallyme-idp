@@ -2,6 +2,7 @@ package tokyomap.oauth.domain.logics;
 
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import tokyomap.oauth.domain.entities.redis.PreAuthoriseCache;
@@ -10,7 +11,7 @@ import tokyomap.oauth.domain.entities.redis.ProAuthoriseCache;
 @Component
 public class RedisLogic {
 
-  private static final int CODE_LIFETIME = 10;
+  private final int codeLifetime;
 
   private final RedisTemplate<String, PreAuthoriseCache> preAuthoriseCacheRedisTemplate;
   private final RedisTemplate<String, ProAuthoriseCache> proAuthoriseCacheRedisTemplate;
@@ -18,10 +19,12 @@ public class RedisLogic {
   @Autowired
   public RedisLogic(
       RedisTemplate<String, PreAuthoriseCache> preAuthoriseCacheRedisTemplate,
-      RedisTemplate<String, ProAuthoriseCache> proAuthoriseCacheRedisTemplate
+      RedisTemplate<String, ProAuthoriseCache> proAuthoriseCacheRedisTemplate,
+      @Value("${code.lifetime-minutes}") int codeLifetime
   ) {
     this.preAuthoriseCacheRedisTemplate = preAuthoriseCacheRedisTemplate;
     this.proAuthoriseCacheRedisTemplate = proAuthoriseCacheRedisTemplate;
+    this.codeLifetime = codeLifetime;
   }
 
   public PreAuthoriseCache getPreAuthoriseCache(String key) {
@@ -38,7 +41,7 @@ public class RedisLogic {
 
   public void saveProAuthoriseCache(String key, ProAuthoriseCache proAuthoriseCache) {
     this.proAuthoriseCacheRedisTemplate.opsForValue().set(key, proAuthoriseCache);
-    this.proAuthoriseCacheRedisTemplate.expire(key, CODE_LIFETIME, TimeUnit.MINUTES);
+    this.proAuthoriseCacheRedisTemplate.expire(key, codeLifetime, TimeUnit.MINUTES);
   }
 
   /**

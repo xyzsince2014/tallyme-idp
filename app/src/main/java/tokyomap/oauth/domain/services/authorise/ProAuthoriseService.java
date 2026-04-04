@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.Arrays;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -16,14 +17,16 @@ import tokyomap.oauth.domain.logics.RedisLogic;
 @Service
 public class ProAuthoriseService {
 
-  // todo: use global constants
-  private static final String RESPONSE_TYPE_AUTHORISATION_CODE = "code";
-
+  private final String responseTypeCode;
   private final RedisLogic redisLogic;
 
   @Autowired
-  public ProAuthoriseService(RedisLogic redisLogic) {
+  public ProAuthoriseService(
+    RedisLogic redisLogic,
+    @Value("${oauth.response.type.code}") String responseTypeCode
+  ) {
     this.redisLogic = redisLogic;
+    this.responseTypeCode = responseTypeCode;
   }
 
   /**
@@ -39,7 +42,7 @@ public class ProAuthoriseService {
     AuthenticationResult authenticationResult = this.authenticate(resourceOwner, authorisationForm);
 
     switch (authenticationResult.getAuthorisationRequest().getResponseType()) {
-      case RESPONSE_TYPE_AUTHORISATION_CODE: {
+      case "code": {
         // Authorisation Code Flow
         URI redirectUri = this.issueCode(authenticationResult);
         return redirectUri;

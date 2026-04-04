@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import tokyomap.oauth.domain.entities.postgres.Client;
@@ -16,13 +17,30 @@ import tokyomap.oauth.dtos.ResponseClientDto;
 @Service
 public class UpdateClientService extends RegisterService {
 
-  // todo: use global constants
-  private static final String TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC = "client_secret_basic";
-
   private final ClientLogic clientLogic;
 
   @Autowired
-  public UpdateClientService(ClientLogic clientLogic) {
+  public UpdateClientService(
+    ClientLogic clientLogic,
+    @Value("${oauth.response.type.code}") String responseTypeCode,
+    @Value("#{'${oauth.response.types}'.split(',')}") String[] responseTypes,
+    @Value("${oauth.grant.type.authorization-code}") String grantTypeAuthorizationCode,
+    @Value("#{'${oauth.grant.types}'.split(',')}") String[] grantTypes,
+    @Value("${oauth.token-endpoint.auth.method.default}") String tokenEndpointAuthMethodDefault,
+    @Value("#{'${oauth.token-endpoint.auth.methods}'.split(',')}") String[] tokenEndpointAuthMethods,
+    @Value("${registration.endpoint}") String registrationEndpoint,
+    @Value("${error.invalid-client-name}") String errorInvalidClientName,
+    @Value("${error.invalid-client-uri}") String errorInvalidClientUri,
+    @Value("${error.invalid-redirect-uris}") String errorInvalidRedirectUris,
+    @Value("${error.invalid-scope}") String errorInvalidScope,
+    @Value("${error.invalid-token-endpoint-auth-method}") String errorInvalidTokenEndpointAuthMethod,
+    @Value("${error.invalid-grant-types}") String errorInvalidGrantTypes,
+    @Value("${error.invalid-response-types}") String errorInvalidResponseTypes
+  ) {
+    super(responseTypeCode, responseTypes, grantTypeAuthorizationCode, grantTypes,
+        tokenEndpointAuthMethodDefault, tokenEndpointAuthMethods, registrationEndpoint,
+        errorInvalidClientName, errorInvalidClientUri, errorInvalidRedirectUris, errorInvalidScope,
+        errorInvalidTokenEndpointAuthMethod, errorInvalidGrantTypes, errorInvalidResponseTypes);
     this.clientLogic = clientLogic;
   }
 
@@ -38,13 +56,13 @@ public class UpdateClientService extends RegisterService {
   @Override
   public ClientValidationResultDto execValidation(RequestClientDto requestClientDto) throws ApiException {
     if (requestClientDto.getClientName() == null || requestClientDto.getClientName().trim().isEmpty()) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Client Name.");
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidClientName);
     }
 
-    String tokenEndpointAuthMethod = Arrays.stream(TOKEN_ENDPOINT_AUTH_METHODS)
-        .filter(m -> m.equals(requestClientDto.getTokenEndpointAuthMethod() == null ? TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC : requestClientDto.getTokenEndpointAuthMethod()))
+    String tokenEndpointAuthMethod = Arrays.stream(tokenEndpointAuthMethods)
+        .filter(m -> m.equals(requestClientDto.getTokenEndpointAuthMethod() == null ? tokenEndpointAuthMethodDefault : requestClientDto.getTokenEndpointAuthMethod()))
         .findFirst()
-        .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid tokenEndpointAuthMethod."));
+        .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, errorInvalidTokenEndpointAuthMethod));
 
     return this.validateAndResolveGrantAndResponseTypes(requestClientDto, tokenEndpointAuthMethod);
   }

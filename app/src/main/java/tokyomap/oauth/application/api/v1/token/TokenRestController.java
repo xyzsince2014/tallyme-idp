@@ -21,7 +21,6 @@ import java.util.Map;
 @RequestMapping("/api/v1/token")
 public class TokenRestController {
 
-  // todo: use global constants
   private static final String GRANT_TYPE_AUTHORISATION_CODE = "authorization_code";
   private static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
   private static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";

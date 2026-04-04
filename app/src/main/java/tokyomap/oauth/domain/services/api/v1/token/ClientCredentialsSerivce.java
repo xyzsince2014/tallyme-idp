@@ -2,6 +2,7 @@ package tokyomap.oauth.domain.services.api.v1.token;
 
 import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +18,22 @@ import tokyomap.oauth.utils.Decorder;
 @Service
 public class ClientCredentialsSerivce extends TokenService<CredentialsDto> {
 
-  // todo: use global constants
-  private static final String ERROR_MESSAGE_INVALID_SCOPES = "Invalid Scopes";
-
+  private final String errorInvalidScopes;
   private final TokenLogic tokenLogic;
 
   @Autowired
-  public ClientCredentialsSerivce(ClientLogic clientLogic, Decorder decorder, TokenLogic tokenLogic) {
-    super(clientLogic, decorder);
+  public ClientCredentialsSerivce(
+    ClientLogic clientLogic,
+    Decorder decorder,
+    TokenLogic tokenLogic,
+    @Value("${error.invalid-client-id}") String errorInvalidClientId,
+    @Value("${error.no-matching-client}") String errorNoMatchingClient,
+    @Value("${error.no-matching-client-secret}") String errorNoMatchingClientSecret,
+    @Value("${error.invalid-scopes}") String errorInvalidScopes
+  ) {
+    super(clientLogic, decorder, errorInvalidClientId, errorNoMatchingClient, errorNoMatchingClientSecret);
     this.tokenLogic = tokenLogic;
+    this.errorInvalidScopes = errorInvalidScopes;
   }
 
   /**
@@ -39,7 +47,7 @@ public class ClientCredentialsSerivce extends TokenService<CredentialsDto> {
     String[] requestedScope = requestDto.getScope();
 
     if (!Arrays.asList(credentialsDto.getScope()).containsAll(Arrays.asList(requestedScope))) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_SCOPES);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidScopes);
     }
 
     return new TokenValidationResultDto(credentialsDto.getId(), credentialsDto);

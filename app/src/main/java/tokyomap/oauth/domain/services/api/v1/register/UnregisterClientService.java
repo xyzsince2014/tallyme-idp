@@ -1,6 +1,7 @@
 package tokyomap.oauth.domain.services.api.v1.register;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tokyomap.oauth.domain.logics.ClientLogic;
@@ -9,16 +10,23 @@ import tokyomap.oauth.domain.logics.TokenLogic;
 @Service
 public class UnregisterClientService {
 
-  private static final String TOKEN_TYPE_HINT_ACCESS_TOKEN = "access_token";
-  private static final String TOKEN_TYPE_HINT_REFRESH_TOKEN = "refresh_token";
-
   private final TokenLogic tokenLogic;
   private final ClientLogic clientLogic;
 
+  private final String tokenTypeHintAccessToken;
+  private final String tokenTypeHintRefreshToken;
+
   @Autowired
-  public UnregisterClientService(TokenLogic tokenLogic, ClientLogic clientLogic) {
+  public UnregisterClientService(
+    TokenLogic tokenLogic,
+    ClientLogic clientLogic,
+    @Value("${oauth.token.type.hint.access-token}") String tokenTypeHintAccessToken,
+    @Value("${oauth.token.type.hint.refresh-token}") String tokenTypeHintRefreshToken
+  ) {
     this.tokenLogic = tokenLogic;
     this.clientLogic = clientLogic;
+    this.tokenTypeHintAccessToken = tokenTypeHintAccessToken;
+    this.tokenTypeHintRefreshToken = tokenTypeHintRefreshToken;
   }
 
   /**
@@ -31,7 +39,7 @@ public class UnregisterClientService {
   @Transactional
   public void execute(String clientId, String accessToken, String refreshToken) {
     this.clientLogic.unregisterClient(clientId);
-    this.tokenLogic.revokeToken(accessToken, TOKEN_TYPE_HINT_ACCESS_TOKEN);
-    this.tokenLogic.revokeToken(accessToken, TOKEN_TYPE_HINT_REFRESH_TOKEN);
+    this.tokenLogic.revokeToken(accessToken, tokenTypeHintAccessToken);
+    this.tokenLogic.revokeToken(accessToken, tokenTypeHintRefreshToken);
   }
 }

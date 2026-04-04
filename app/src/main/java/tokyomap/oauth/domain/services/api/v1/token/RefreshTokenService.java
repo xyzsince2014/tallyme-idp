@@ -2,6 +2,7 @@ package tokyomap.oauth.domain.services.api.v1.token;
 
 import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,24 +22,35 @@ import tokyomap.oauth.utils.Decorder;
 @Service
 public class RefreshTokenService extends TokenService<SignedJWT> {
 
-  // todo: use global constants
-  private static final String TOKEN_TYPE_HINT_REFRESH_TOKEN = "refresh_token";
-
-  private static final String ERROR_MESSAGE_NO_MATCHING_REFRESH_TOKEN = "No Matching RefreshToken";
-  private static final String ERROR_MESSAGE_NO_MATCHING_USER = "No Matching User";
-
   private final TokenScrutinyService tokenScrutinyService;
   private final TokenLogic tokenLogic;
   private final UsrLogic usrLogic;
 
+  private final String tokenTypeHintRefreshToken;
+  private final String errorNoMatchingRefreshToken;
+  private final String errorNoMatchingUser;
+
   @Autowired
   public RefreshTokenService(
-    TokenScrutinyService tokenScrutinyService, ClientLogic clientLogic, Decorder decorder, TokenLogic tokenLogic, UsrLogic usrLogic
+    TokenScrutinyService tokenScrutinyService,
+    ClientLogic clientLogic,
+    Decorder decorder,
+    TokenLogic tokenLogic,
+    UsrLogic usrLogic,
+    @Value("${error.invalid-client-id}") String errorInvalidClientId,
+    @Value("${error.no-matching-client}") String errorNoMatchingClient,
+    @Value("${error.no-matching-client-secret}") String errorNoMatchingClientSecret,
+    @Value("${oauth.token.type.hint.refresh-token}") String tokenTypeHintRefreshToken,
+    @Value("${error.no-matching-refresh-token}") String errorNoMatchingRefreshToken,
+    @Value("${error.no-matching-user}") String errorNoMatchingUser
   ) {
-    super(clientLogic, decorder);
+    super(clientLogic, decorder, errorInvalidClientId, errorNoMatchingClient, errorNoMatchingClientSecret);
     this.tokenScrutinyService = tokenScrutinyService;
     this.tokenLogic = tokenLogic;
     this.usrLogic = usrLogic;
+    this.tokenTypeHintRefreshToken = tokenTypeHintRefreshToken;
+    this.errorNoMatchingRefreshToken = errorNoMatchingRefreshToken;
+    this.errorNoMatchingUser = errorNoMatchingUser;
   }
 
   /**
@@ -56,7 +68,7 @@ public class RefreshTokenService extends TokenService<SignedJWT> {
 
     RefreshToken refreshToken = this.tokenLogic.getRefreshToken(incomingToken);
     if(refreshToken == null) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_NO_MATCHING_REFRESH_TOKEN);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorNoMatchingRefreshToken);
     }
 
     return new TokenValidationResultDto(credentialsDto.getId(), refreshJWT);
@@ -74,11 +86,11 @@ public class RefreshTokenService extends TokenService<SignedJWT> {
 
     // revoke the old refresh token before generate the new one
     String refreshToken = tokenValidationResultDto.getPayload().serialize();
-    this.tokenLogic.revokeToken(refreshToken, TOKEN_TYPE_HINT_REFRESH_TOKEN);
+    this.tokenLogic.revokeToken(refreshToken, tokenTypeHintRefreshToken);
 
     Usr usr = this.usrLogic.getUsrBySub(tokenValidationResultDto.getPayload().getJWTClaimsSet().getSubject());
     if(usr == null) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_NO_MATCHING_USER);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorNoMatchingUser);
     }
 
     String clientId = tokenValidationResultDto.getPayload().getJWTClaimsSet().getStringClaim("clientId");

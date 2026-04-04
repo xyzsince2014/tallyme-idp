@@ -3,6 +3,7 @@ package tokyomap.oauth.domain.services.signUp;
 import java.time.LocalDateTime;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,13 +17,17 @@ import tokyomap.oauth.domain.services.api.v1.ApiException;
 public class SignUpService {
 
   private static final BCryptPasswordEncoder B_CRYPT_PASSWORD_ENCODER = new BCryptPasswordEncoder();
-  private static final String SCOPE = "openid profile email";
 
+  private final String defaultScope;
   private final UsrLogic usrLogic;
 
   @Autowired
-  public SignUpService(UsrLogic usrLogic) {
+  public SignUpService(
+    UsrLogic usrLogic,
+    @Value("${user.default-scope}") String defaultScope
+  ) {
     this.usrLogic = usrLogic;
+    this.defaultScope = defaultScope;
   }
 
   /**
@@ -46,7 +51,7 @@ public class SignUpService {
     usr.setName(signUpForm.getName());
     usr.setPassword(B_CRYPT_PASSWORD_ENCODER.encode(signUpForm.getPassword()));
     usr.setPhoneNumberVerified(false);
-    usr.setScope(SCOPE);
+    usr.setScope(defaultScope);
     usr.setRole(Role.ROLE_USER);
     usr.setCreatedAt(now);
     usr.setUpdatedAt(now);

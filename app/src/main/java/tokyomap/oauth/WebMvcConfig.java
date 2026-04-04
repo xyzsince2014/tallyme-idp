@@ -18,24 +18,15 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * the application configuration for Spring MVC
+ * The application configuration for Spring MVC.
  */
 @Configuration
 @ComponentScan
 @EnableWebMvc // register Beans needed by Spring MVC, and enable async communications
 @EnableAspectJAutoProxy(proxyTargetClass = true) // enable AOP
 @PropertySource("classpath:conf/application.properties")
+@PropertySource(value = "classpath:yaml/constants.yaml", factory = YamlPropertySourceFactory.class)
 public class WebMvcConfig implements WebMvcConfigurer {
-
-//  /**
-//   * enable injections by @Value
-//   * unnecessary from Spring ≥ 4.3
-//   * @return PropertySourcesPlaceholderConfigurer
-//   */
-//  @Bean
-//  public static PropertySourcesPlaceholderConfigurer placeholderConfigurer() {
-//    return new PropertySourcesPlaceholderConfigurer();
-//  }
 
   /**
    * enables messages to be read from classpath:/conf/messages.properties via @Autowired messageResource.getMessage(key)
@@ -60,7 +51,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
   }
 
   /**
-   * allow CORS
+   * Allows CORS.
+   *
    * @param registry
    */
   @Override
@@ -75,7 +67,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
   }
 
   /**
-   * configure async communications
+   * Configures async communications.
+   *
    * @param configurer
    */
   @Override

@@ -30,28 +30,22 @@ import tokyomap.oauth.dtos.GenerateTokensResponseDto;
 @Component
 public class TokenLogic {
 
-  // in minutes
-  private static final int ACCESS_TOKEN_LIFETIME = 10;
-  private static final int ID_TOKEN_LIFETIME = 5;
-  private static final int REFRESH_TOKEN_LIFETIME = 1440; // 1 day
-
-  private static final String TOKEN_TYPE_BEARER = "Bearer";
-  private static final String ALGORITHM = "RSA";
-  private static final int KEY_SIZE = 2048;
-  private static final int HOURS_JST = 9;
-
-  private static final String TOKEN_TYPE_HINT_ACCESS_TOKEN = "access_token";
-  private static final String TOKEN_TYPE_HINT_REFRESH_TOKEN = "refresh_token";
-
   private final AccessTokenRepository accessTokenRepository;
   private final RefreshTokenRepository refreshTokenRepository;
+
   private final String authServerHost;
-
-  // todo: malfunctioning if use `private static final String[] audience = new String[] {"http://resource:8081"};`
   private final String audience; // registered resource servers
-
   private final RSAPrivateKey rsaPrivateKey;
   private final String kid;
+  private final int accessTokenLifetime;
+  private final int idTokenLifetime;
+  private final int refreshTokenLifetime;
+  private final String tokenTypeBearer;
+  private final String algorithm;
+  private final int keySize;
+  private final int hoursJst;
+  private final String tokenTypeHintAccessToken;
+  private final String tokenTypeHintRefreshToken;
 
   @Autowired
   public TokenLogic(
@@ -59,12 +53,30 @@ public class TokenLogic {
       RefreshTokenRepository refreshTokenRepository,
       RsaPublicKeyRepository rsaPublicKeyRepository,
       @Value("${docker.container.auth}") String containerAuth,
-      @Value("${docker.container.resource}") String containerResource
+      @Value("${docker.container.resource}") String containerResource,
+      @Value("${oauth.token.lifetime.access-minutes}") int accessTokenLifetime,
+      @Value("${oauth.token.lifetime.id-minutes}") int idTokenLifetime,
+      @Value("${oauth.token.lifetime.refresh-minutes}") int refreshTokenLifetime,
+      @Value("${oauth.token.type.bearer}") String tokenTypeBearer,
+      @Value("${rsa.algorithm}") String algorithm,
+      @Value("${rsa.key-size}") int keySize,
+      @Value("${timezone.offset-hours}") int hoursJst,
+      @Value("${oauth.token.type.hint.access-token}") String tokenTypeHintAccessToken,
+      @Value("${oauth.token.type.hint.refresh-token}") String tokenTypeHintRefreshToken
   ) throws Exception {
     this.accessTokenRepository = accessTokenRepository;
     this.refreshTokenRepository = refreshTokenRepository;
     this.authServerHost = containerAuth;
     this.audience = containerResource;
+    this.accessTokenLifetime = accessTokenLifetime;
+    this.idTokenLifetime = idTokenLifetime;
+    this.refreshTokenLifetime = refreshTokenLifetime;
+    this.tokenTypeBearer = tokenTypeBearer;
+    this.algorithm = algorithm;
+    this.keySize = keySize;
+    this.hoursJst = hoursJst;
+    this.tokenTypeHintAccessToken = tokenTypeHintAccessToken;
+    this.tokenTypeHintRefreshToken = tokenTypeHintRefreshToken;
 
     // The RSA key pair is generated once at startup and shared across all threads for the lifetime of this bean.
     // This is the standard pattern for JWT signing: read-only shared state needs no synchronisation.
@@ -90,8 +102,8 @@ public class TokenLogic {
    * @throws NoSuchAlgorithmException if the RSA algorithm is unavailable on this JVM
    */
   private KeyPair generateRsaKeyPair() throws NoSuchAlgorithmException {
-    KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM);
-    keyGenerator.initialize(KEY_SIZE);
+    KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(algorithm);
+    keyGenerator.initialize(keySize);
     return keyGenerator.genKeyPair();
   }
 
@@ -128,11 +140,11 @@ public class TokenLogic {
       return;
     }
 
-    if (tokenTypeHint.equals(TOKEN_TYPE_HINT_ACCESS_TOKEN)) {
+    if (tokenTypeHint.equals(tokenTypeHintAccessToken)) {
       this.accessTokenRepository.deleteById(token);
       return;
     }
-    if (tokenTypeHint.equals(TOKEN_TYPE_HINT_REFRESH_TOKEN)) {
+    if (tokenTypeHint.equals(tokenTypeHintRefreshToken)) {
       this.refreshTokenRepository.deleteById(token);
       return;
     }
@@ -158,11 +170,11 @@ public class TokenLogic {
 
     LocalDateTime now = LocalDateTime.now();
 
-    String accessToken = this.createSignedJWT(sub, scope, clientId, now, ACCESS_TOKEN_LIFETIME);
-    String refreshToken = this.createSignedJWT(sub, scope, clientId, now, REFRESH_TOKEN_LIFETIME);
+    String accessToken = this.createSignedJWT(sub, scope, clientId, now, accessTokenLifetime);
+    String refreshToken = this.createSignedJWT(sub, scope, clientId, now, refreshTokenLifetime);
 
     // generate an id token as well because a resource owner (sub) is always present in these flows
-    String idToken = this.createIdJWT(sub, clientId, nonce, now, ID_TOKEN_LIFETIME, now);
+    String idToken = this.createIdJWT(sub, clientId, nonce, now, idTokenLifetime, now);
 
     RefreshToken refreshTokenEntity = new RefreshToken(refreshToken, now, now);
     RefreshToken registeredRefreshTokenEntity = this.refreshTokenRepository.saveAndFlush(refreshTokenEntity);
@@ -172,7 +184,7 @@ public class TokenLogic {
 
     // todo: scope must not be sent back to the client in production
     return new GenerateTokensResponseDto(
-      TOKEN_TYPE_BEARER,
+      tokenTypeBearer,
       registeredAccessTokenEntity.getAccessToken(),
       registeredRefreshTokenEntity.getRefreshToken(),
       idToken,
@@ -197,14 +209,14 @@ public class TokenLogic {
 
     // sub is the client itself in the Client Credentials Flow (no resource owner)
     String accessToken =
-      this.createSignedJWT(clientId, scope, clientId, now, ACCESS_TOKEN_LIFETIME);
+      this.createSignedJWT(clientId, scope, clientId, now, accessTokenLifetime);
 
     AccessToken registeredAccessTokenEntity =
       this.accessTokenRepository.saveAndFlush(new AccessToken(accessToken, now, now));
 
     // todo: scope must not be sent back to the client in production
     return new GenerateTokensResponseDto(
-      TOKEN_TYPE_BEARER, registeredAccessTokenEntity.getAccessToken(), String.join(" ", scope)
+      tokenTypeBearer, registeredAccessTokenEntity.getAccessToken(), String.join(" ", scope)
     );
   }
 
@@ -252,8 +264,8 @@ public class TokenLogic {
       .claim("iss", this.authServerHost) // the issuer, normally the URI of the auth server
       .claim("sub", sub != null ? sub : clientId) // the subject, normally the unique identifier for the resource owner
       .claim("aud", this.audience) // the audience, normally the URI(s) of the protected resource(s) the access token can be sent to
-      .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the issued-at timestamp of the token in seconds from 1 Jan 1970 (GMT)
-      .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the expiration time
+      .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(hoursJst))) // the issued-at timestamp of the token in seconds from 1 Jan 1970 (GMT)
+      .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(hoursJst))) // the expiration time
       .claim("jti", jti) // the unique identifier of the token, a value unique to each token created by the issuer
       .claim("scope", joinedScope)
       .claim("clientId", clientId)
@@ -288,10 +300,10 @@ public class TokenLogic {
       .claim("iss", this.authServerHost) // the issuer of the token, i.e. the URL of the IdP
       .claim("sub", sub) // the subject of the token, a stable and unique identifier for the user at the IdP, which is usually a machine-readable string and shouldn’t be used as a username.
       .claim("aud", clientId) // the audience of the id token that must contain the client ID of the RP
-      .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the timestamp at which the token is issued
-      .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the expiration timestamp of the token. all ID tokens expire, usually pretty quickly.
+      .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(hoursJst))) // the timestamp at which the token is issued
+      .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(hoursJst))) // the expiration timestamp of the token. all ID tokens expire, usually pretty quickly.
       .claim("nonce", nonce) // a string sent by the RP during the authentication request, used to mitigate replay attacks. It must be included if the RP sends it
-      .claim("authTime", authTime.toEpochSecond(ZoneOffset.ofHours(HOURS_JST))) // the timestamp at which the user authenticated to the IdP
+      .claim("authTime", authTime.toEpochSecond(ZoneOffset.ofHours(hoursJst))) // the timestamp at which the user authenticated to the IdP
       .claim("amr", new String[] {"pwd"}) // the authentication method reference, which indicates how the user authenticated to the IdP, e.g. pwd (by password), otp (by password and one-time password), sms (by SMS), email (by mail).
       // todo: .claim("atHash", accessToken) // cryptographic hash of the access token
       // todo: .claim("cHash", hashed authorisation code) // cryptographic hash of the authorization code

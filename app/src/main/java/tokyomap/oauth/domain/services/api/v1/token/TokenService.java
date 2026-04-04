@@ -1,5 +1,6 @@
 package tokyomap.oauth.domain.services.api.v1.token;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import tokyomap.oauth.domain.entities.postgres.Client;
 import tokyomap.oauth.domain.logics.ClientLogic;
@@ -12,17 +13,25 @@ import tokyomap.oauth.utils.Decorder;
 
 public abstract class TokenService<T> {
 
-  // todo: use global constants
-  private static final String ERROR_MESSAGE_INVALID_CLIENT_ID = "Invalid Client Id";
-  private static final String ERROR_MESSAGE_NO_MATCHING_CLIENT = "No Matching Client";
-  private static final String ERROR_MESSAGE_NO_MATCHING_CLIENT_SECRET = "Invalid Client Secret";
-
   private final ClientLogic clientLogic;
   private final Decorder decorder;
 
-  public TokenService(ClientLogic clientLogic, Decorder decorder) {
+  protected final String errorInvalidClientId;
+  private final String errorNoMatchingClient;
+  private final String errorNoMatchingClientSecret;
+
+  public TokenService(
+    ClientLogic clientLogic,
+    Decorder decorder,
+    @Value("${error.invalid-client-id}") String errorInvalidClientId,
+    @Value("${error.no-matching-client}") String errorNoMatchingClient,
+    @Value("${error.no-matching-client-secret}") String errorNoMatchingClientSecret
+  ) {
     this.clientLogic = clientLogic;
     this.decorder = decorder;
+    this.errorInvalidClientId = errorInvalidClientId;
+    this.errorNoMatchingClient = errorNoMatchingClient;
+    this.errorNoMatchingClientSecret = errorNoMatchingClientSecret;
   }
 
   /**
@@ -61,7 +70,7 @@ public abstract class TokenService<T> {
     if (requestDto.getClientId() != null) {
       if (credentialsDto.getId() != null) {
         // return an error if we've already seen the client's credentials in the authorization header
-        throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_INVALID_CLIENT_ID);
+        throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidClientId);
       }
       clientId = requestDto.getClientId();
       clientSecret = requestDto.getClientSecret();
@@ -69,10 +78,10 @@ public abstract class TokenService<T> {
 
     Client client = this.clientLogic.getClientByClientId(clientId);
     if (client == null) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_NO_MATCHING_CLIENT);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorNoMatchingClient);
     }
     if (!client.getClientSecret().equals(clientSecret)) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, ERROR_MESSAGE_NO_MATCHING_CLIENT_SECRET);
+      throw new ApiException(HttpStatus.BAD_REQUEST, errorNoMatchingClientSecret);
     }
 
     String[] clientScope = client.getScope().split(" ");

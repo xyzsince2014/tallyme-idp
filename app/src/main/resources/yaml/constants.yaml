@@ -1,0 +1,67 @@
+oauth:
+  token:
+    type:
+      bearer: Bearer
+      hint:
+        access-token: access_token
+        refresh-token: refresh_token
+    lifetime:
+      access-minutes: 10
+      id-minutes: 5
+      refresh-minutes: 1440 # 1 day
+  response:
+    type:
+      code: code
+    types: code
+  grant:
+    type:
+      authorization-code: authorization_code
+      refresh-token: refresh_token
+      client-credentials: client_credentials
+    types: authorization_code,refresh_token,client_credentials
+  token-endpoint:
+    auth:
+      method:
+        default: client_secret_basic
+      methods: none,client_secret_basic,client_secret_post,client_secret_jwt,private_key_jwt
+  pkce:
+    code-challenge-method: S256   # RFC 7636
+
+code:
+  lifetime-minutes: 10
+
+client:
+  lifetime-days: 90
+
+rsa:
+  algorithm: RSA
+  key-size: 2048
+  public-key-format: "-----BEGIN PUBLIC KEY-----%n%s%n-----END PUBLIC KEY-----%n"
+
+timezone:
+  offset-hours: 9   # JST
+
+user:
+  default-scope: "openid profile email"
+
+error:
+  invalid-resource: Invalid Resource
+  no-authorization-header: No Authorization Header
+  invalid-client: Invalid Client
+  no-matching-refresh-token: No Matching RefreshToken
+  no-matching-user: No Matching User
+  invalid-code: Invalid Authorisation Code
+  invalid-client-id: Invalid Client Id
+  invalid-code-challenge: Invalid Code Challenge
+  invalid-code-challenge-method: Invalid Code Challenge Method
+  invalid-scopes: Invalid Scopes
+  no-matching-client: No Matching Client
+  no-matching-client-secret: Invalid Client Secret
+  invalid-client-name: Invalid Client Name.
+  invalid-client-uri: Invalid Client Uri.
+  invalid-redirect-uris: Invalid Redirect Uris.
+  invalid-scope: Invalid Scope.
+  invalid-token-endpoint-auth-method: Invalid tokenEndpointAuthMethod.
+  invalid-grant-types: Invalid Grant Types
+  invalid-response-types: Invalid Response Types
+  invalid-client-id-update: Invalid ClientId
