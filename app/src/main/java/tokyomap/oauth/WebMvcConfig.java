@@ -25,7 +25,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableWebMvc // register Beans needed by Spring MVC, and enable async communications
 @EnableAspectJAutoProxy(proxyTargetClass = true) // enable AOP
 @PropertySource("classpath:conf/application.properties")
+@PropertySource("classpath:conf/oauth.properties")
 @PropertySource(value = "classpath:yaml/constants.yaml", factory = YamlPropertySourceFactory.class)
+@PropertySource(value = "classpath:yaml/messages.yaml", factory = YamlPropertySourceFactory.class)
 public class WebMvcConfig implements WebMvcConfigurer {
 
   /**

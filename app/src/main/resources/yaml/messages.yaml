@@ -1,0 +1,25 @@
+error:
+  invalid-resource: Invalid Resource
+  no-authorization-header: No Authorization Header
+  invalid-client: Invalid Client
+  no-matching-refresh-token: No Matching RefreshToken
+  no-matching-user: No Matching User
+  invalid-code: Invalid Authorisation Code
+  invalid-client-id: Invalid Client Id
+  invalid-code-challenge: Invalid Code Challenge
+  invalid-code-challenge-method: Invalid Code Challenge Method
+  invalid-scopes: Invalid Scopes
+  no-matching-client: No Matching Client
+  no-matching-client-secret: Invalid Client Secret
+  invalid-client-name: Invalid Client Name.
+  invalid-client-uri: Invalid Client Uri
+  invalid-redirect-uris: Invalid Redirect Uris
+  invalid-scope: Invalid Scope
+  invalid-token-endpoint-auth-method: Invalid tokenEndpointAuthMethod
+  invalid-grant-types: Invalid Grant Types
+  invalid-response-types: Invalid Response Types
+  invalid-client-id-update: Invalid ClientId
+  grant-type-required: grant_type is required
+  code-required: code is required for authorization_code grant
+  code-verifier-required: code_verifier is required for authorization_code grant
+  refresh-token-required: refresh_token is required for refresh_token grant
