@@ -58,14 +58,28 @@ public class TokenRestController {
       requestDto.setClientSecret(params.get("client_secret"));
       requestDto.setScope(params.get("scope"));
 
-      switch (requestDto.getGrantType()) {
+      String grantType = requestDto.getGrantType();
+      if (grantType == null || grantType.isEmpty()) {
+        throw new ApiException(HttpStatus.BAD_REQUEST, "grant_type is required");
+      }
+
+      switch (grantType) {
         case GRANT_TYPE_AUTHORISATION_CODE: {
+          if (requestDto.getCode() == null || requestDto.getCode().isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "code is required for authorization_code grant");
+          }
+          if (requestDto.getCodeVerifier() == null || requestDto.getCodeVerifier().isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "code_verifier is required for authorization_code grant");
+          }
           TokenValidationResultDto<ProAuthoriseCache> tokenValidationResultDto =
             this.authorisationCodeFlowService.execValidation(requestDto, authorization);
           GenerateTokensResponseDto responseDto = this.authorisationCodeFlowService.execute(tokenValidationResultDto);
           return ResponseEntity.status(HttpStatus.OK).body(responseDto);
         }
         case GRANT_TYPE_REFRESH_TOKEN: {
+          if (requestDto.getRefreshToken() == null || requestDto.getRefreshToken().isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "refresh_token is required for refresh_token grant");
+          }
           TokenValidationResultDto<SignedJWT> tokenValidationResultDto =
             this.refreshTokenService.execValidation(requestDto, authorization);
           GenerateTokensResponseDto responseDto = this.refreshTokenService.execute(tokenValidationResultDto);
