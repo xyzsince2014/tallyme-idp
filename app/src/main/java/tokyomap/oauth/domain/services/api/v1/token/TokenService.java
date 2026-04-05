@@ -84,8 +84,6 @@ public abstract class TokenService<T> {
       throw new ApiException(HttpStatus.BAD_REQUEST, errorNoMatchingClientSecret);
     }
 
-    String[] clientScope = client.getScope().split(" ");
-
-    return new CredentialsDto(clientId, clientSecret, clientScope);
+    return new CredentialsDto(clientId, clientSecret, client.getScope());
   }
 }

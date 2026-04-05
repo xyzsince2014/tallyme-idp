@@ -94,7 +94,8 @@ public class RefreshTokenService extends TokenService<SignedJWT> {
     }
 
     String clientId = tokenValidationResultDto.getPayload().getJWTClaimsSet().getStringClaim("clientId");
-    String[] scope = tokenValidationResultDto.getPayload().getJWTClaimsSet().getStringArrayClaim("scope");
+    String scope = tokenValidationResultDto.getPayload().getJWTClaimsSet().getStringClaim("scope");
+
     GenerateTokensResponseDto responseDto =
       this.tokenLogic.generateTokensWithRefreshToken(clientId, usr.getSub(), scope, null);
 

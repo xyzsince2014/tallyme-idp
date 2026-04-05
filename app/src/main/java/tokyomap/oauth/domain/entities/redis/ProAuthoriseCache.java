@@ -9,13 +9,13 @@ public class ProAuthoriseCache implements Serializable {
   private static final long serialVersionUID = -5514415646648723349L;
 
   private String sub;
-  private String[] scopeRequested;
+  private String scopeRequested;
   private PreAuthoriseCache preAuthoriseCache;
 
-  // used to deserialisation by RedisTemplate
+  // used to deserialization by RedisTemplate
   public ProAuthoriseCache() {}
 
-  public ProAuthoriseCache(String sub, String[] scopeRequested, PreAuthoriseCache preAuthoriseCache) {
+  public ProAuthoriseCache(String sub, String scopeRequested, PreAuthoriseCache preAuthoriseCache) {
     this.sub = sub;
     this.scopeRequested = scopeRequested;
     this.preAuthoriseCache = preAuthoriseCache;
@@ -29,11 +29,11 @@ public class ProAuthoriseCache implements Serializable {
     this.sub = sub;
   }
 
-  public String[] getScopeRequested() {
+  public String getScopeRequested() {
     return scopeRequested;
   }
 
-  public void setScopeRequested(String[] scopeRequested) {
+  public void setScopeRequested(String scopeRequested) {
     this.scopeRequested = scopeRequested;
   }
 
@@ -48,7 +48,7 @@ public class ProAuthoriseCache implements Serializable {
   @Override
   public String toString() {
     return "sub = " + this.sub
-        + ", scopeRequested = " + Arrays.stream(this.scopeRequested).collect(Collectors.joining (","))
+        + ", scopeRequested = " + this.scopeRequested
         + ", preAuthoriseCache = " + this.preAuthoriseCache.toString();
   }
 }

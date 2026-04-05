@@ -9,9 +9,9 @@ public class PreAuthoriseResponseDto implements Serializable {
 
   private Client client;
   private String requestId;
-  private String[] requestedScope; // todo: rename to requestedScopes
+  private String requestedScope;
 
-  public PreAuthoriseResponseDto(Client client, String requestId, String[] requestedScope) {
+  public PreAuthoriseResponseDto(Client client, String requestId, String requestedScope) {
     this.client = client;
     this.requestId = requestId;
     this.requestedScope = requestedScope;
@@ -33,11 +33,11 @@ public class PreAuthoriseResponseDto implements Serializable {
     this.requestId = requestId;
   }
 
-  public String[] getRequestedScope() {
+  public String getRequestedScope() {
     return requestedScope;
   }
 
-  public void setRequestedScope(String[] requestedScope) {
+  public void setRequestedScope(String requestedScope) {
     this.requestedScope = requestedScope;
   }
 }

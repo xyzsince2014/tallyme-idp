@@ -2,6 +2,9 @@ package tokyomap.oauth.domain.entities.postgres;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -145,6 +148,13 @@ public class Client implements Serializable {
 
   public String getScope() {
     return scope;
+  }
+
+  public List<String> getScopeList() {
+    if (this.scope == null || this.scope.trim().isEmpty()) {
+      return Collections.emptyList();
+    }
+    return Arrays.asList(this.scope.split(" "));
   }
 
   public void setScope(String scope) {

@@ -133,24 +133,24 @@ public class TokenLogic {
    * Physically deletes the token.
    *
    * @param token
-   * @param tokenTypeHint
+   * @param tokenTypeHint token_type_hint is optional (RFC 7009)
    */
   public void revokeToken(String token, String tokenTypeHint) {
     if (token == null || token.isEmpty()) {
       return;
     }
 
+    if (tokenTypeHint == null) {
+      this.accessTokenRepository.deleteById(token);
+      this.refreshTokenRepository.deleteById(token);
+    }
+
     if (tokenTypeHint.equals(tokenTypeHintAccessToken)) {
       this.accessTokenRepository.deleteById(token);
-      return;
     }
     if (tokenTypeHint.equals(tokenTypeHintRefreshToken)) {
       this.refreshTokenRepository.deleteById(token);
-      return;
     }
-
-    this.accessTokenRepository.deleteById(token);
-    this.refreshTokenRepository.deleteById(token);
   }
 
   /**
@@ -159,13 +159,13 @@ public class TokenLogic {
    *
    * @param clientId the client that requested the tokens
    * @param sub the resource owner's subject identifier
-   * @param scope the granted scope
+   * @param scope the granted scope (single space-separated String)
    * @param nonce the nonce from the original authorisation request (used in the ID token); may be null
    * @return GenerateTokensResponseDto containing access token, refresh token, and ID token
    * @throws Exception
    */
   public GenerateTokensResponseDto generateTokensWithRefreshToken(
-    String clientId, String sub, String[] scope, String nonce
+    String clientId, String sub, String scope, String nonce
   ) throws Exception {
 
     LocalDateTime now = LocalDateTime.now();
@@ -188,7 +188,7 @@ public class TokenLogic {
       registeredAccessTokenEntity.getAccessToken(),
       registeredRefreshTokenEntity.getRefreshToken(),
       idToken,
-      String.join(" ", scope)
+      scope
     );
   }
 
@@ -203,7 +203,7 @@ public class TokenLogic {
    * @return GenerateTokensResponseDto containing only an access token (refresh token and ID token are null)
    * @throws Exception
    */
-  public GenerateTokensResponseDto generateAccessToken(String clientId, String[] scope) throws Exception {
+  public GenerateTokensResponseDto generateAccessToken(String clientId, String scope) throws Exception {
 
     LocalDateTime now = LocalDateTime.now();
 
@@ -240,24 +240,22 @@ public class TokenLogic {
   /**
    * Creates a serialised signed JWT.
    *
-   * @param sub      the subject (resource owner's identifier, or clientId for CCF)
-   * @param scope   the granted scope
+   * @param sub the subject (resource owner's identifier, or clientId for CCF)
+   * @param scope the granted scope (single space-separated String)
    * @param clientId the client the token is issued to
-   * @param iat      the issued-at timestamp
-   * @param minutes  the token lifetime in minutes
+   * @param iat the issued-at timestamp
+   * @param minutes the token lifetime in minutes
    * @return serialized signed JWT
    * @throws Exception
    */
   private String createSignedJWT(
-    String sub, String[] scope, String clientId, LocalDateTime iat, long minutes
+    String sub, String scope, String clientId, LocalDateTime iat, long minutes
   ) throws Exception {
 
     JWSHeader jwsHeader = this.createJWSHeader();
 
     // a cryptographically random value that uniquely identifies this token instance
     String jti = RandomStringUtils.random(8, true, true);
-
-    String joinedScope = (scope != null) ? String.join(" ", scope) : "";
 
     // payload
     JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
@@ -267,7 +265,7 @@ public class TokenLogic {
       .claim("iat", iat.toEpochSecond(ZoneOffset.ofHours(hoursJst))) // the issued-at timestamp of the token in seconds from 1 Jan 1970 (GMT)
       .claim("exp", iat.plusMinutes(minutes).toEpochSecond(ZoneOffset.ofHours(hoursJst))) // the expiration time
       .claim("jti", jti) // the unique identifier of the token, a value unique to each token created by the issuer
-      .claim("scope", joinedScope)
+      .claim("scope", scope)
       .claim("clientId", clientId)
       .build();
 

@@ -68,9 +68,9 @@ public class ProAuthoriseService {
       throw new InvalidProAuthoriseException("Invalid RequestId");
     }
 
-    String[] requestedScope = preAuthoriseCache.getScope();
+    String requestedScope = preAuthoriseCache.getScope();
 
-    if(!Arrays.asList(resourceOwner.getScope().split(" ")).containsAll(Arrays.asList(requestedScope))) {
+    if(!resourceOwner.getScopeList().containsAll(Arrays.asList(requestedScope.split(" ")))) {
       throw new InvalidProAuthoriseException("Invalid Scopes Requested");
     }
 
@@ -85,7 +85,7 @@ public class ProAuthoriseService {
    */
   private URI issueCode(AuthenticationResult authenticationResult) {
     String sub = authenticationResult.getResourceOwner().getSub();
-    String[] requestedScope = authenticationResult.getScopesRequested();
+    String requestedScope = authenticationResult.getScopesRequested();
     PreAuthoriseCache preAuthoriseCache = authenticationResult.getAuthorisationRequest();
 
     String code = RandomStringUtils.random(8, true, true);
@@ -105,10 +105,10 @@ public class ProAuthoriseService {
 
   private class AuthenticationResult {
     private Usr resourceOwner;
-    private String[] requestedScope;
+    private String requestedScope;
     private PreAuthoriseCache preAuthoriseCache;
 
-    AuthenticationResult(Usr resourceOwner, String[] requestedScope, PreAuthoriseCache preAuthoriseCache) {
+    AuthenticationResult(Usr resourceOwner, String requestedScope, PreAuthoriseCache preAuthoriseCache) {
       this.resourceOwner = resourceOwner;
       this.requestedScope = requestedScope;
       this.preAuthoriseCache = preAuthoriseCache;
@@ -122,11 +122,11 @@ public class ProAuthoriseService {
       this.resourceOwner = resourceOwner;
     }
 
-    public String[] getScopesRequested() {
+    public String getScopesRequested() {
       return requestedScope;
     }
 
-    public void setScopesRequested(String[] requestedScope) {
+    public void setScopesRequested(String requestedScope) {
       this.requestedScope = requestedScope;
     }
 

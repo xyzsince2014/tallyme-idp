@@ -1,6 +1,9 @@
 package tokyomap.oauth.dtos;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class CredentialsDto implements Serializable {
 
@@ -10,7 +13,7 @@ public class CredentialsDto implements Serializable {
 
   private String secret;
 
-  private String[] scope;
+  private String scope;
 
   public CredentialsDto() {}
 
@@ -19,7 +22,7 @@ public class CredentialsDto implements Serializable {
     this.secret = secret;
   }
 
-  public CredentialsDto(String id, String secret, String[] scope) {
+  public CredentialsDto(String id, String secret, String scope) {
     this.id = id;
     this.secret = secret;
     this.scope = scope;
@@ -41,11 +44,18 @@ public class CredentialsDto implements Serializable {
     this.secret = secret;
   }
 
-  public String[] getScope() {
+  public String getScope() {
     return scope;
   }
 
-  public void setScope(String[] scope) {
+  public List<String> getScopeList() {
+    if (this.scope == null || this.scope.trim().isEmpty()) {
+      return Collections.emptyList();
+    }
+    return Arrays.asList(this.scope.split(" "));
+  }
+
+  public void setScope(String scope) {
     this.scope = scope;
   }
 }

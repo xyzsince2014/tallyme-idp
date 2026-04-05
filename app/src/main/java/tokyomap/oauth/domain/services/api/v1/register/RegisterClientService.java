@@ -46,7 +46,8 @@ public class RegisterClientService extends RegisterService {
   }
 
   /**
-   * register the given client
+   * Registers the given client.
+   *
    * @param requestClientDto
    * @param validationResultDto
    * @return clientRegistered

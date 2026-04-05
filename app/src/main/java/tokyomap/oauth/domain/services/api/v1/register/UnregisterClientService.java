@@ -40,6 +40,6 @@ public class UnregisterClientService {
   public void execute(String clientId, String accessToken, String refreshToken) {
     this.clientLogic.unregisterClient(clientId);
     this.tokenLogic.revokeToken(accessToken, tokenTypeHintAccessToken);
-    this.tokenLogic.revokeToken(accessToken, tokenTypeHintRefreshToken);
+    this.tokenLogic.revokeToken(refreshToken, tokenTypeHintRefreshToken);
   }
 }

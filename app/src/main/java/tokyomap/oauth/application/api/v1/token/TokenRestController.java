@@ -56,10 +56,7 @@ public class TokenRestController {
       requestDto.setRefreshToken(params.get("refresh_token"));
       requestDto.setClientId(params.get("client_id"));
       requestDto.setClientSecret(params.get("client_secret"));
-
-      String scopeStr = params.get("scope");
-      String[] scope = (scopeStr != null && !scopeStr.isEmpty()) ? scopeStr.split(" ") : new String[0];
-      requestDto.setScope(scope);
+      requestDto.setScope(params.get("scope"));
 
       switch (requestDto.getGrantType()) {
         case GRANT_TYPE_AUTHORISATION_CODE: {

@@ -1,10 +1,8 @@
 package tokyomap.oauth.domain.entities.postgres;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -233,8 +231,34 @@ public class Usr implements Serializable {
     return scope;
   }
 
+  /**
+   * Returns the scope string as a List for validation and logic processing.
+   * Handles null or empty strings by returning an empty list to prevent NPE.
+   *
+   * @return a list of individual scope strings
+   */
+  public List<String> getScopeList() {
+    if (this.scope == null || this.scope.trim().isEmpty()) {
+      return Collections.emptyList();
+    }
+    return Arrays.asList(this.scope.split(" "));
+  }
+
+  /**
+   * Sets the scope string after removing duplicates and preserving order.
+   * e.g.　"openid profile openid" becomes "openid profile".
+   *
+   * @param scope the space-separated scope string from the request
+   */
   public void setScope(String scope) {
-    this.scope = scope;
+    if (scope == null || scope.trim().isEmpty()) {
+      this.scope = null;
+      return;
+    }
+
+    // split by space, remove duplicates using LinkedHashSet to preserve order, and join back.
+    Set<String> uniqueScopes = new LinkedHashSet<>(Arrays.asList(scope.split(" ")));
+    this.scope = String.join(" ", uniqueScopes);
   }
 
   public Role getRole() { return role; }
@@ -259,7 +283,7 @@ public class Usr implements Serializable {
 
   @Override
   public String toString() {
-    return "sun = " + this.sub
+    return "sub = " + this.sub
       + ", name = " + this.name
       + ", familyName = " + this.familyName
       + ", givenName = " + this.givenName

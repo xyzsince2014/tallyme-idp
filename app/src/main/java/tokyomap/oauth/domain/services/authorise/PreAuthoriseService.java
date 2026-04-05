@@ -45,11 +45,12 @@ public class PreAuthoriseService {
    */
   private ValidationResult validateAuthorisationRequest(PreAuthoriseCache preAuthoriseCache) {
 
-    Client client = this.clientLogic.getClientByClientId(preAuthoriseCache.getClientId());
+    String clientId = preAuthoriseCache.getClientId();
+    Client client = this.clientLogic.getClientByClientId(clientId);
 
     // todo: make a logging aspect for Exceptions thrown
     if(client == null) {
-      throw new InvalidPreAuthoriseException("No Matching Client", client.getClientUri());
+      throw new InvalidPreAuthoriseException("No Matching Client", clientId);
     }
 
     // RFC 6749 §4.1.2: redirect_uri must exactly match one of the registered redirect_uris
@@ -58,9 +59,9 @@ public class PreAuthoriseService {
       throw new InvalidPreAuthoriseException("Invalid Redirect URI", client.getClientUri());
     }
 
-    String[] requestedScope = preAuthoriseCache.getScope();
+    String requestedScope = preAuthoriseCache.getScope();
 
-    if(!Arrays.asList(client.getScope().split(" ")).containsAll(Arrays.asList(requestedScope))) {
+    if(!client.getScopeList().containsAll(Arrays.asList(requestedScope.split(" ")))) {
       throw new InvalidPreAuthoriseException("Invalid Scopes Requested", client.getClientUri());
     }
 
@@ -87,9 +88,9 @@ public class PreAuthoriseService {
    */
   private class ValidationResult {
     private Client client;
-    private String[] requestedScope;
+    private String requestedScope;
 
-    ValidationResult(Client client, String[] requestedScope) {
+    ValidationResult(Client client, String requestedScope) {
       this.client = client;
       this.requestedScope = requestedScope;
     }
@@ -98,7 +99,7 @@ public class PreAuthoriseService {
       return client;
     }
 
-    String[] getRequestedScope() {
+    String getRequestedScope() {
       return requestedScope;
     }
   }

@@ -37,16 +37,17 @@ public class ClientCredentialsSerivce extends TokenService<CredentialsDto> {
   }
 
   /**
-   * execute validation of request to the token endpoint
+   * Executes validation of request to the token endpoint.
+   *
    * @return TokenValidationResultDto
    */
   @Override
-  public TokenValidationResultDto<CredentialsDto> execValidation(GenerateTokensRequestDto requestDto, String authorization) throws ApiException {
+  public TokenValidationResultDto<CredentialsDto> execValidation(
+    GenerateTokensRequestDto requestDto, String authorization
+  ) throws ApiException {
 
     CredentialsDto credentialsDto = this.validateClient(requestDto, authorization);
-    String[] requestedScope = requestDto.getScope();
-
-    if (!Arrays.asList(credentialsDto.getScope()).containsAll(Arrays.asList(requestedScope))) {
+    if (!credentialsDto.getScopeList().containsAll(Arrays.asList(requestDto.getScope().split(" ")))) {
       throw new ApiException(HttpStatus.BAD_REQUEST, errorInvalidScopes);
     }
 

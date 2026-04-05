@@ -8,7 +8,7 @@ public class PreAuthoriseCache implements Serializable {
   private static final long serialVersionUID = -2333688999379632926L;
 
   private String responseType;
-  private String[] scope;
+  private String scope;
   private String clientId;
   private String redirectUri;
   private String state;
@@ -20,7 +20,7 @@ public class PreAuthoriseCache implements Serializable {
   PreAuthoriseCache() {}
 
   public PreAuthoriseCache(
-      String responseType, String[] scope, String clientId, String redirectUri,
+      String responseType, String scope, String clientId, String redirectUri,
       String state, String codeChallenge, String codeChallengeMethod, String nonce
   ) {
     this.responseType = responseType;
@@ -41,11 +41,11 @@ public class PreAuthoriseCache implements Serializable {
     this.responseType = responseType;
   }
 
-  public String[] getScope() {
+  public String getScope() {
     return scope;
   }
 
-  public void setScopes(String[] scope) {
+  public void setScope(String scope) {
     this.scope = scope;
   }
 
@@ -96,7 +96,7 @@ public class PreAuthoriseCache implements Serializable {
   @Override
   public String toString() {
     return "responseType = " + this.responseType
-      + ", scope = " + String.join(" ", this.scope)
+      + ", scope = " + this.scope
       + ", clientId = " + this.clientId
       + ", redirectUri = " + this.redirectUri
       + ", state = " + this.state
