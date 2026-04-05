@@ -44,23 +44,6 @@ cd ~/workspace/tokyomap-oauth
 # http://localhost:8080
 ```
 
-### Build and Run
-```bash
-# 0. Run postgres and redis containers beforehand
-
-# 1. Build the WAR file
-cd ~/workspace/tokyomap-oauth
-./app/build-war.sh develop
-
-# 2. Build Docker image (packages the WAR + Tomcat)
-./docker-build.sh
-
-# 3. Run Tomcat in Docker container
-./docker-run.sh
-
-# 4. Access the application
-```
-
 ### Troubleshooting
 If IntelliJ shows import errors:
 1. File → Invalidate Caches → Invalidate and Restart
