@@ -2,6 +2,7 @@ package tokyomap.oauth.application.api.v1.token;
 
 import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,16 +31,28 @@ public class TokenRestController {
   private final AuthorisationCodeFlowService authorisationCodeFlowService;
   private final RefreshTokenService refreshTokenService;
   private final ClientCredentialsSerivce clientCredentialsSerivce;
+  private final String errorGrantTypeRequired;
+  private final String errorCodeRequired;
+  private final String errorCodeVerifierRequired;
+  private final String errorRefreshTokenRequired;
 
   @Autowired
   public TokenRestController(
       AuthorisationCodeFlowService authorisationCodeFlowService,
       RefreshTokenService refreshTokenService,
-      ClientCredentialsSerivce clientCredentialsSerivce
+      ClientCredentialsSerivce clientCredentialsSerivce,
+      @Value("${error.grant-type-required}") String errorGrantTypeRequired,
+      @Value("${error.code-required}") String errorCodeRequired,
+      @Value("${error.code-verifier-required}") String errorCodeVerifierRequired,
+      @Value("${error.refresh-token-required}") String errorRefreshTokenRequired
   ) {
     this.authorisationCodeFlowService = authorisationCodeFlowService;
     this.refreshTokenService = refreshTokenService;
     this.clientCredentialsSerivce = clientCredentialsSerivce;
+    this.errorGrantTypeRequired = errorGrantTypeRequired;
+    this.errorCodeRequired = errorCodeRequired;
+    this.errorCodeVerifierRequired = errorCodeVerifierRequired;
+    this.errorRefreshTokenRequired = errorRefreshTokenRequired;
   }
 
   @RequestMapping(method = RequestMethod.POST, headers = "Content-Type=application/x-www-form-urlencoded;charset=utf-8")
@@ -60,16 +73,16 @@ public class TokenRestController {
 
       String grantType = requestDto.getGrantType();
       if (grantType == null || grantType.isEmpty()) {
-        throw new ApiException(HttpStatus.BAD_REQUEST, "grant_type is required");
+        throw new ApiException(HttpStatus.BAD_REQUEST, this.errorGrantTypeRequired);
       }
 
       switch (grantType) {
         case GRANT_TYPE_AUTHORISATION_CODE: {
           if (requestDto.getCode() == null || requestDto.getCode().isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "code is required for authorization_code grant");
+            throw new ApiException(HttpStatus.BAD_REQUEST, this.errorCodeRequired);
           }
           if (requestDto.getCodeVerifier() == null || requestDto.getCodeVerifier().isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "code_verifier is required for authorization_code grant");
+            throw new ApiException(HttpStatus.BAD_REQUEST, this.errorCodeVerifierRequired);
           }
           TokenValidationResultDto<ProAuthoriseCache> tokenValidationResultDto =
             this.authorisationCodeFlowService.execValidation(requestDto, authorization);
@@ -78,7 +91,7 @@ public class TokenRestController {
         }
         case GRANT_TYPE_REFRESH_TOKEN: {
           if (requestDto.getRefreshToken() == null || requestDto.getRefreshToken().isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "refresh_token is required for refresh_token grant");
+            throw new ApiException(HttpStatus.BAD_REQUEST, this.errorRefreshTokenRequired);
           }
           TokenValidationResultDto<SignedJWT> tokenValidationResultDto =
             this.refreshTokenService.execValidation(requestDto, authorization);

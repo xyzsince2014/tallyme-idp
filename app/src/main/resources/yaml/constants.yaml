@@ -66,3 +66,7 @@ error:
   invalid-grant-types: Invalid Grant Types
   invalid-response-types: Invalid Response Types
   invalid-client-id-update: Invalid ClientId
+  grant-type-required: grant_type is required
+  code-required: code is required for authorization_code grant
+  code-verifier-required: code_verifier is required for authorization_code grant
+  refresh-token-required: refresh_token is required for refresh_token grant
