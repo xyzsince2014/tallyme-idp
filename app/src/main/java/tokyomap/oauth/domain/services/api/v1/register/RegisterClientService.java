@@ -1,7 +1,6 @@
 package tokyomap.oauth.domain.services.api.v1.register;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,12 +15,14 @@ import tokyomap.oauth.dtos.RequestClientDto;
 public class RegisterClientService extends RegisterService {
 
   private final int clientLifetime;
+  private final String tokenEndpointAuthMethodNone;
   private final ClientLogic clientLogic;
 
   @Autowired
   public RegisterClientService(
     ClientLogic clientLogic,
     @Value("${client.lifetime-days}") int clientLifetime,
+    @Value("${oauth.token-endpoint.auth.method.none}") String tokenEndpointAuthMethodNone,
     @Value("${oauth.response.type.code}") String responseTypeCode,
     @Value("#{'${oauth.response.types}'.split(',')}") String[] responseTypes,
     @Value("${oauth.grant.type.authorization-code}") String grantTypeAuthorizationCode,
@@ -43,6 +44,7 @@ public class RegisterClientService extends RegisterService {
         errorInvalidTokenEndpointAuthMethod, errorInvalidGrantTypes, errorInvalidResponseTypes);
     this.clientLogic = clientLogic;
     this.clientLifetime = clientLifetime;
+    this.tokenEndpointAuthMethodNone = tokenEndpointAuthMethodNone;
   }
 
   /**
@@ -79,9 +81,9 @@ public class RegisterClientService extends RegisterService {
    * @return clientSecret, or null if the auth method is NONE
    */
   private String generateClientSecret(String tokenEndpointAuthMethod) {
-    return Arrays.stream(tokenEndpointAuthMethods).anyMatch(m -> m.equals(tokenEndpointAuthMethod))
-        ? RandomStringUtils.random(8, true, true)
-        : null;
+    return tokenEndpointAuthMethodNone.equals(tokenEndpointAuthMethod)
+        ? null
+        : RandomStringUtils.random(8, true, true);
   }
 
   /**

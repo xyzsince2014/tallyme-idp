@@ -22,6 +22,7 @@ oauth:
   token-endpoint:
     auth:
       method:
+        none: none
         default: client_secret_basic
       methods: none,client_secret_basic,client_secret_post,client_secret_jwt,private_key_jwt
   pkce:
