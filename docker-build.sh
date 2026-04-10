@@ -1,3 +1,17 @@
 #!/bin/bash
-docker image rm tokyomap.oauth:dev
-docker build -t tokyomap.oauth:dev app
+
+# common defensive idiom
+set -euo pipefail
+
+echo "⌛  Build & Deploy..."
+
+# Execute Docker build inside the Minikube environment
+eval $(minikube docker-env)
+
+docker image rm tokyomap-oauth:dev 2>/dev/null || true
+docker build -t tokyomap-oauth:dev app
+
+# tell K8s to remake pods with the new docker image
+kubectl rollout restart deployment tokyomap-oauth
+
+echo "✅ Done."

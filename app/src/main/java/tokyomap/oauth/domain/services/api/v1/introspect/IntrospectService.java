@@ -28,8 +28,8 @@ public class IntrospectService {
 
   private final String errorInvalidResource;
   private final String errorNoAuthorizationHeader;
-  private final String authServerHost;
-  private final String audience;
+  private final String domainAs;
+  private final String domainRs;
 
 
   @Autowired
@@ -40,8 +40,8 @@ public class IntrospectService {
       TokenLogic tokenLogic,
       @Value("${error.invalid-resource}") String errorInvalidResource,
       @Value("${error.no-authorization-header}") String errorNoAuthorizationHeader,
-      @Value("${docker.container.auth}") String authServerHost,
-      @Value("${docker.container.resource}") String audience
+      @Value("${domain.as}") String domainAs,
+      @Value("${domain.rs}") String domainRs
   ) {
     this.tokenScrutinyService = tokenScrutinyService;
     this.decorder = decorder;
@@ -49,8 +49,8 @@ public class IntrospectService {
     this.tokenLogic = tokenLogic;
     this.errorInvalidResource = errorInvalidResource;
     this.errorNoAuthorizationHeader = errorNoAuthorizationHeader;
-    this.authServerHost = authServerHost;
-    this.audience = audience;
+    this.domainAs = domainAs;
+    this.domainRs = domainRs;
   }
 
   /**
@@ -109,10 +109,10 @@ public class IntrospectService {
     JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
     Date now = new Date();
 
-    if (!this.authServerHost.equals(claims.getIssuer())) {
+    if (!this.domainAs.equals(claims.getIssuer())) {
       return false;
     }
-    if (!claims.getAudience().contains(this.audience)) {
+    if (!claims.getAudience().contains(this.domainRs)) {
       return false;
     }
     if (now.before(claims.getIssueTime()) || now.after(claims.getExpirationTime())) {

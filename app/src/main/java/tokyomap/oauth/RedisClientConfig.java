@@ -13,11 +13,11 @@ import tokyomap.oauth.domain.entities.redis.PreAuthoriseCache;
 import tokyomap.oauth.domain.entities.redis.ProAuthoriseCache;
 
 @Configuration
-@PropertySource("classpath:conf/redisClient.properties")
+@PropertySource("classpath:conf/redis.properties")
 public class RedisClientConfig {
 
-  @Value("${redis.host}") private String host;
-  @Value("${redis.port}") private String port;
+  @Value("${redis.jedis.host}") private String host;
+  @Value("${redis.jedis.port}") private String port;
 
   @Bean
   public JedisConnectionFactory jedisConnectionFactory() {

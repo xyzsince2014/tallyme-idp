@@ -1,42 +1,45 @@
 #!/bin/bash
 
-if [ $# != 1 ]; then
-  echo "invalid number of args."
+# common defensive idiom
+set -euo pipefail
+
+if [ $# -gt 1 ]; then
+  echo "⚠️ Invalid number of args. Usage: $0 [profile]"
   exit 1
 fi
 
-echo "execute $(pwd)/$0"
+# default profile = develop
+TARGET_PROFILE=${1:-develop}
+echo "🚀 Build with profile: ${TARGET_PROFILE}"
 
 cleanUp() {
   mvn -P $1 clean test
   rm -rf ./tomcat/webapps
   mkdir -p ./tomcat/webapps
-  echo "cleanUp() completed."
+  echo "🔥 cleanUp() completed."
 }
 
 build() {
   mvn -P $1 -DskipTests=true package
-  echo "build() completed."
+  echo "🌟 build() completed."
 }
 
 deploy() {
   cp ./target/ROOT.war ./tomcat/webapps
-  echo "deploy() completed."
+  echo "🌟 deploy() completed."
 }
 
+# execute with validation on PROFILE
 PROFILES=("develop" "production")
-
-for PROFILE in ${PROFILES[@]}; do
-  if [ $PROFILE != $1 ]; then
-    continue;
+for PROFILE in "${PROFILES[@]}"; do
+  if [ "$PROFILE" == "$TARGET_PROFILE" ]; then
+    cleanUp "$TARGET_PROFILE"
+    build "$TARGET_PROFILE"
+    deploy
+    echo "✅ Done."
+    exit 0
   fi
-
-  cleanUp $1
-  build $1
-  deploy
-
-  exit 0
 done
 
-echo "invalid args."
+echo "🛑 Invalid profile: ${TARGET_PROFILE}. Allowed profiles: ${PROFILES[*]}"
 exit 1

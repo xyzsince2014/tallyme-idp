@@ -33,7 +33,7 @@ public class PostgresJpaConfig {
   @Value("${hibernate.hbm2ddl.auto}") private String hbm2ddlAuto;
   @Value("${hibernate.show_sql}") private String showSql;
   @Value("${hibernate.format_sql}") private String formatSql;
-  @Value("${hibernate.default_schema:oauth}") private String defaultSchema;
+  @Value("${hibernate.default_schema}") private String defaultSchema;
 
   @Value("${spring.jpa.packages.entities}") private String packagesToScan;
 
@@ -71,8 +71,6 @@ public class PostgresJpaConfig {
     jpaProperties.setProperty("hibernate.hbm2ddl.auto", this.hbm2ddlAuto);
     jpaProperties.setProperty("hibernate.show_sql", this.showSql);
     jpaProperties.setProperty("hibernate.format_sql", this.formatSql);
-
-    // avoid @Table(schema = "oauth") in all entities
     jpaProperties.setProperty("hibernate.default_schema", this.defaultSchema);
 
     LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();

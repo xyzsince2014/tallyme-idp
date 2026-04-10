@@ -1,7 +1,6 @@
 package tokyomap.oauth;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -21,12 +20,10 @@ import tokyomap.oauth.domain.services.authenticate.AuthenticateService;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter { // todo: use SpringSecurity@5.7
 
   private final AuthenticateService authenticateService;
-  private final String domain;
 
   @Autowired
-  public WebSecurityConfig (AuthenticateService authenticateService, @Value("${domain.web}") String domain) {
+  public WebSecurityConfig (AuthenticateService authenticateService) {
     this.authenticateService = authenticateService;
-    this.domain = domain;
   }
 
   @Bean
@@ -52,7 +49,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter { // todo: u
         .loginProcessingUrl("/authenticate")
         .usernameParameter("email")
         .passwordParameter("password")
-        .defaultSuccessUrl(this.domain + "/api/auth/authorise")
         .failureUrl("/authenticate?error=true");
 
     http.logout()
@@ -68,7 +64,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter { // todo: u
   }
 
   /**
-   * enables DaoAuthenticationProvider with the passwordEncoder
+   * Enables DaoAuthenticationProvider with the passwordEncoder.
+   *
    * @param builder
    * @throws Exception
    */

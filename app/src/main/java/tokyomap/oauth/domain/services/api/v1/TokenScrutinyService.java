@@ -33,8 +33,8 @@ public class TokenScrutinyService {
   public TokenScrutinyService(
     TokenLogic tokenLogic,
     RsaPublicKeyLogic rsaPublicKeyLogic,
-    @Value("${docker.container.auth}") String containerAuth,
-    @Value("${docker.container.resource}") String containerResource
+    @Value("${domain.as}") String containerAuth,
+    @Value("${domain.rs}") String containerResource
   ) {
     this.tokenLogic = tokenLogic;
     this.rsaPublicKeyLogic = rsaPublicKeyLogic;
