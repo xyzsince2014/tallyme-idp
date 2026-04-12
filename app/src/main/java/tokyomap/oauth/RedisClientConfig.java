@@ -1,9 +1,12 @@
 package tokyomap.oauth;
 
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -17,14 +20,20 @@ import tokyomap.oauth.domain.entities.redis.ProAuthoriseCache;
 public class RedisClientConfig {
 
   @Value("${redis.jedis.host}") private String host;
-  @Value("${redis.jedis.port}") private String port;
+  @Value("${redis.jedis.port}") private int port;
+  @Value("${redis.jedis.connectionTimeout}") private int connectionTimeout;
+  @Value("${redis.jedis.soTimeout}") private int soTimeout;
 
   @Bean
   public JedisConnectionFactory jedisConnectionFactory() {
-    JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();
-    jedisConnectionFactory.setHostName(this.host);
-    jedisConnectionFactory.setPort(Integer.parseInt(this.port));
-    return jedisConnectionFactory;
+    RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(this.host, this.port);
+
+    JedisClientConfiguration clientConfig = JedisClientConfiguration.builder()
+        .connectTimeout(Duration.ofMillis(this.connectionTimeout))
+        .readTimeout(Duration.ofMillis(this.soTimeout))
+        .build();
+
+    return new JedisConnectionFactory(redisConfig, clientConfig);
   }
 
   @Bean

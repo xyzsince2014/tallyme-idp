@@ -23,6 +23,8 @@ public class PostgresJpaConfig {
   @Value("${db.url}") private String url;
   @Value("${db.username}") private String username;
   @Value("${db.password}") private String password;
+  @Value("${db.connect_timeout}") private int connectTimeout;
+  @Value("${db.socket_timeout}") private int socketTimeout;
 
   @Value("${cp.max_total}") private int maxTotal;
   @Value("${cp.max_idle}") private int maxIdle;
@@ -54,6 +56,8 @@ public class PostgresJpaConfig {
     dataSource.setMaxIdle(this.maxIdle);
     dataSource.setMinIdle(this.minIdle);
     dataSource.setMaxWaitMillis(this.maxWaitMills);
+    dataSource.addConnectionProperty("connectTimeout", String.valueOf(this.connectTimeout));
+    dataSource.addConnectionProperty("socketTimeout", String.valueOf(this.socketTimeout));
     return dataSource;
   }
 
