@@ -41,6 +41,7 @@ public class ProAuthoriseService {
 
     AuthenticationResult authenticationResult = this.authenticate(resourceOwner, authorisationForm);
 
+    // RFC 6749 §4.1.1: response_type MUST be "code" for the Authorisation Code Flow
     switch (authenticationResult.getAuthorisationRequest().getResponseType()) {
       case "code": {
         // Authorisation Code Flow
@@ -70,6 +71,7 @@ public class ProAuthoriseService {
 
     String requestedScope = preAuthoriseCache.getScope();
 
+    // RFC 6749 §4.1.2: the resource owner's granted scopes must cover the originally requested scope
     if(!resourceOwner.getScopeList().containsAll(Arrays.asList(requestedScope.split(" ")))) {
       throw new InvalidProAuthoriseException("Invalid Scopes Requested");
     }

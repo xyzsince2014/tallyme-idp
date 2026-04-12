@@ -1,7 +1,6 @@
 package tokyomap.oauth.domain.entities.redis;
 
 import java.io.Serializable;
-import org.springframework.lang.Nullable;
 
 public class PreAuthoriseCache implements Serializable {
 
@@ -20,8 +19,14 @@ public class PreAuthoriseCache implements Serializable {
   PreAuthoriseCache() {}
 
   public PreAuthoriseCache(
-      String responseType, String scope, String clientId, String redirectUri,
-      String state, String codeChallenge, String codeChallengeMethod, String nonce
+    String responseType,
+    String scope,
+    String clientId,
+    String redirectUri,
+    String state,
+    String codeChallenge,
+    String codeChallengeMethod,
+    String nonce
   ) {
     this.responseType = responseType;
     this.scope = scope;

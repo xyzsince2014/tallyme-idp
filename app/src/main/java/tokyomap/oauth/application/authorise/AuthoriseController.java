@@ -69,12 +69,12 @@ public class AuthoriseController {
       model.addAttribute("dto", responseDto);
       return "authorise";
 
-    } catch (NullPointerException e) {
-      return "error";
-
     } catch(InvalidPreAuthoriseException e) {
       model.addAttribute("clientUri", e.getClientUri());
       return "invalidRequest";
+
+    } catch (Exception e) {
+      return "error";
     }
   }
 

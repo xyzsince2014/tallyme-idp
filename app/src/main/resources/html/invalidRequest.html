@@ -12,7 +12,10 @@
 <nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="container">
     <div class="navbar-header">
-      <a class="navbar-brand" th:href="${clientUri}">Invalid Request: <span class="label label-danger">Back</span></a>
+      <span class="navbar-brand">Invalid Request</span>
+      <div th:if="${clientUri != null}" class="navbar-header">
+        <a class="navbar-brand" th:href="${clientUri}"><span class="label label-danger">Back</span></a>
+      </div>
     </div>
   </div>
 </nav>
@@ -20,7 +23,7 @@
   <section class="jumbotron">
     <h2>Invalid Request</h2>
     <p>Something is wrong with the request.</p>
-    <p><a th:href="${clientUri}">Back</a></p>
+    <p th:if="${clientUri != null}"><a th:href="${clientUri}">Back</a></p>
   </section>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
