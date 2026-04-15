@@ -1,9 +1,9 @@
-# tokyomap-oauth
+# tallyme-idp
 
-<img alt="GitHub top language" src="https://img.shields.io/github/languages/top/xyzsince2014/tokyomap-oauth">
-<img alt="GitHub tag (latest by date)" src="https://img.shields.io/github/v/tag/xyzsince2014/tokyomap-oauth">
+<img alt="GitHub top language" src="https://img.shields.io/github/languages/top/xyzsince2014/tallyme-idp">
+<img alt="GitHub tag (latest by date)" src="https://img.shields.io/github/v/tag/xyzsince2014/tallyme-idp">
 
-The OIDC authorisation server for https://www.tokyomap.live
+The OIDC Identity Provider accessible by https://idp.tallyme.xyz
 
 ## Prerequisites
 - Java 8 (Amazon Corretto 8 recommended)
@@ -14,8 +14,8 @@ The OIDC authorisation server for https://www.tokyomap.live
 ### Initial Setup (first time only)
 ```bash
 # 1. Clone the repository
-git clone https://github.com/xyzsince2014/tokyomap-oauth.git
-cd tokyomap-oauth
+git clone https://github.com/xyzsince2014/tallyme-idp.git
+cd tallyme-idp
 
 # 2. Open in IntelliJ IDEA
 # File → Open → Select the `app` folder
@@ -31,7 +31,7 @@ cd tokyomap-oauth
 # 0. Run postgres and redis containers beforehand
 
 # 1. Build the WAR file
-cd ~/workspace/tokyomap-oauth
+cd ~/workspace/tallyme-idp
 ./app/build-war.sh develop
 
 # 2. Build Docker image (packages the WAR + Tomcat)

@@ -5,13 +5,13 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>tokyomap-oauth.app</groupId>
+  <groupId>tallyme-idp.app</groupId>
   <artifactId>ROOT</artifactId>
   <version>1.0.0</version>
   <packaging>war</packaging>
-  <name>tokyomap-oauth</name>
-  <url>https://www.tokyomap.ouath</url>
-  <description>OAuth for https://www.tokyomap.live</description>
+  <name>tallyme-idp</name>
+  <url>https://idp.tallyme.xyz</url>
+  <description>OIDC IdP</description>
 
   <repositories>
     <repository>

@@ -26,8 +26,6 @@ postgres/var/lib/postgresql/data
 
 # Redis
 redis/data/*
-
-# Redis
 redis/data/*.rdb
 
 # Miscellaneous
@@ -35,3 +33,4 @@ target/
 app/src/main/webapp/META-INF/MANIFEST.MF
 app/src/profiles/production/resources/conf/jpa.properties
 app/src/profiles/production/resources/conf/redisClient.properties
+.vscode/
