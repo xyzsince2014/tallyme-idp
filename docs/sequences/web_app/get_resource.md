@@ -25,7 +25,7 @@ app->>app: nullify stored accessToken and scoeps
 alt has no refreshToken stored
 app-->>user: 200 OK + error.html
 else
-app->>auth: POST /token<br>+ clientId and clientSecret in Authorization header<br>+ GenerateTokensRequestDto<br>(grantType: "REFRESH_TOKEN", refreshToken)
+app->>auth: POST /token<br>+ clientId and clientSecret in Authorization header<br>+ GenerateTokensRequestDto<br>(grantType: "refresh_token", refreshToken)
 auth->>auth: execute validation
 auth->>auth: generate access, refresh and id tokens
 auth-->>app: 200 OK + GenerateTokensResponseDto

@@ -9,10 +9,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import tokyomap.oauth.PostgresJpaConfig;
-import tokyomap.oauth.WebMvcConfig;
-import tokyomap.oauth.domain.entities.postgres.Usr;
-import tokyomap.oauth.domain.logics.UsrLogic;
+import tallyme.idp.PostgresJpaConfig;
+import tallyme.idp.WebMvcConfig;
+import tallyme.idp.domain.entities.postgres.Usr;
+import tallyme.idp.domain.logics.UsrLogic;
 
 @RunWith(SpringRunner.class) // the Runner class to run the test DI container
 @ContextConfiguration(classes = {WebMvcConfig.class, PostgresJpaConfig.class}) // the test DI container's configs

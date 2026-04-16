@@ -8,7 +8,7 @@
   <section>
     <h3>Sign out</h3>
     <p th:if="${param.error}">Error!</p>
-    <form th:action="@{{domain}/auth/sign-out/pro(domain=${@environment.getProperty('domain.web')})}" method="POST">
+    <form th:action="@{{domain}/sign-out/pro(domain=${@environment.getProperty('domain.idp')})}" method="POST">
       <button type="submit">Sign out</button>
       </table>
     </form>
