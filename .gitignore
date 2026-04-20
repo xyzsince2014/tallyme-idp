@@ -31,6 +31,7 @@ redis/data/*.rdb
 # Miscellaneous
 target/
 app/src/main/webapp/META-INF/MANIFEST.MF
+app/.mvn/repository
 app/src/profiles/production/resources/conf/jpa.properties
 app/src/profiles/production/resources/conf/redisClient.properties
 .vscode/
