@@ -3,13 +3,13 @@ version: 0.2
 phases:
   install:
     commands:
-      - aws s3 cp --recursive s3://tallyme.idp/resources/conf/ ./app/src/profiles/production/resources/conf/
+      - aws s3 cp --recursive s3://${CONFIG_S3_BUCKET}/resource/conf/ ./app/src/profiles/production/resources/conf/
       - cd app && ./build-war.sh production
     runtime-versions:
       java: corretto8
   build:
     commands:
-      - docker build -t ${ECR_REPO}:${VERSION} .
+      - docker build -t ${ECR_REPO}:${VERSION} app
   post_build:
     commands:
       - aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_REPO}
