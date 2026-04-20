@@ -2,20 +2,16 @@ version: 0.2
 
 phases:
   install:
-    commands:
-      - aws s3 cp --recursive s3://${CONFIG_S3_BUCKET}/resource/conf/ ./app/src/profiles/production/resources/conf/
-      - cd app
-      - docker build -t ${ECR_REPO}:${VERSION} .
     runtime-versions:
       java: corretto8
+    commands:
+      - aws s3 cp --recursive s3://${CONFIG_S3_BUCKET}/resource/conf/ ./app/src/profiles/production/resources/conf/
   pre_build:
     commands:
-      - cd app
-      - ./build-war.sh production
+      - cd app && ./build-war.sh production
   build:
     commands:
-      - cd app
-      - docker build -t ${ECR_REPO}:${VERSION} .
+      - cd app && docker build -t ${ECR_REPO}:${VERSION} .
   post_build:
     commands:
       - aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_REPO}
