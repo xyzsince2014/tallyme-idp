@@ -1,49 +1,45 @@
 #!/bin/bash
 
-if [ $# != 1 ]; then
-  echo "invalid number of args."
+# common defensive idiom
+set -euo pipefail
+
+if [ $# -gt 1 ]; then
+  echo "⚠️ Invalid number of args. Usage: $0 [profile]"
   exit 1
 fi
 
-echo "execute $(pwd)/$0"
+# default profile = develop
+TARGET_PROFILE=${1:-develop}
+echo "🚀 Build with profile: ${TARGET_PROFILE}"
 
 cleanUp() {
-  mvn --settings .mvn/settings.xml -P $1 clean test
+  mvn -P $1 clean test
   rm -rf ./tomcat/webapps
   mkdir -p ./tomcat/webapps
-  echo "cleanUp() completed."
-}
-
-report() {
-  mvn help:effective-pom -Doutput=.mvn/effective-pom.xml
-  mvn help:effective-settings -Doutput=.mvn/effective-settings.xml
-  echo "report() completed."
+  echo "🔥 cleanUp() completed."
 }
 
 build() {
-  mvn --settings .mvn/settings.xml -P $1 -DskipTests=true package
-  echo "build() completed."
+  mvn -P $1 -DskipTests=true package
+  echo "🌟 build() completed."
 }
 
 deploy() {
   cp ./target/ROOT.war ./tomcat/webapps
-  echo "deploy() completed."
+  echo "🌟 deploy() completed."
 }
 
+# execute with validation on PROFILE
 PROFILES=("develop" "production")
-
-for PROFILE in ${PROFILES[@]}; do
-  if [ $PROFILE != $1 ]; then
-    continue;
+for PROFILE in "${PROFILES[@]}"; do
+  if [ "$PROFILE" == "$TARGET_PROFILE" ]; then
+    cleanUp "$TARGET_PROFILE"
+    build "$TARGET_PROFILE"
+    deploy
+    echo "✅ Done."
+    exit 0
   fi
-
-  cleanUp $1
-  report
-  build $1
-  deploy
-
-  exit 0
 done
 
-echo "invalid args."
+echo "🛑 Invalid profile: ${TARGET_PROFILE}. Allowed profiles: ${PROFILES[*]}"
 exit 1

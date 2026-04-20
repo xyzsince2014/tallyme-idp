@@ -1,19 +1,14 @@
 package domain.services.authorise;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import tokyomap.oauth.RedisClientConfig;
-import tokyomap.oauth.WebMvcConfig;
-import tokyomap.oauth.domain.entities.redis.PreAuthoriseCache;
-import tokyomap.oauth.domain.services.authorise.PreAuthoriseService;
-import tokyomap.oauth.dtos.PreAuthoriseResponseDto;
+import tallyme.idp.RedisClientConfig;
+import tallyme.idp.WebMvcConfig;
+import tallyme.idp.domain.services.authorise.PreAuthoriseService;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {WebMvcConfig.class, RedisClientConfig.class})

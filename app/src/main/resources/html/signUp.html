@@ -12,7 +12,7 @@
     <nav class="navbar navbar-inverse navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand" href="#h2">Tokyomap: <span class="label label-danger">Sign Up</span></a>
+          <a class="navbar-brand" href="#h2">Tallyme: <span class="label label-danger">Sign Up</span></a>
         </div>
       </div>
     </nav>
@@ -20,13 +20,16 @@
   <div class="container">
     <section class="jumbotron">
       <h2>Sign Up</h2>
-      <form th:object="${signUpForm}" th:action="@{{domain}/auth/sign-up(domain=${@environment.getProperty('domain.web')})}" method="POST" class="form" style="display: inline-block">
+      <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <p th:text="${errorMessage}"></p>
+      </div>
+      <form th:object="${signUpForm}" th:action="@{{domain}/sign-up(domain=${@environment.getProperty('domain.idp')})}" method="POST" class="form" style="display: inline-block">
         <input id="email" name="email" placeholder="email" th:field="*{email}" type="email" required/>
         <input id="password" name="password" placeholder="password" th:field="*{password}" type="password" required/>
         <input id="name" name="name" placeholder="name" th:field="*{name}" type="text"/>
         <div>
           <input class="btn btn-primary" type="submit" value="Sign up" style="margin-top: 10px;"/>
-          <p style="margin-top: 10px; font-size: 16px;">Already registered ? <a th:href="@{{domain}/auth/authenticate(domain=${@environment.getProperty('domain.auth')})}">Sign in</a></p>
+          <p style="margin-top: 10px; font-size: 16px;">Already registered ? <a th:href="@{{domain}/authenticate(domain=${@environment.getProperty('domain.idp')})}">Sign in</a></p>
         </div>
       </form>
     </section>

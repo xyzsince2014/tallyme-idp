@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Mermaid Demo</title>
+    <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+<section>
+<h3> RESTful protocol extension to OAuth Dynamic Client Registration</h3>
+<div>Read & Update</div>
+<div class="mermaid">
+  sequenceDiagram
+  autonumber
+
+  actor user as User Agent
+  participant admin as Admin
+  participant auth as RS
+
+  user->>admin: GET /client/{clientId}
+  admin->>admin: fetch from t_admin_client
+  note right of admin: registration_access_token,<br>registration_client_uri
+  admin->>auth: GET /api/v1/register/{clientId} (registration_client_uri)<br>+ registrationAccessToken in Authorization header
+  auth->>auth: checkAccessTokenRegistration()
+  auth-->>admin: 200 OK + ReadClientResponseDto
+  admin-->>user: form + client info
+
+  user->>user: fill the form<br>and submit update
+
+  user->>admin: PUT /client/{clientId} + update params
+  admin->>admin: fetch from t_admin_client
+  note right of admin: registration_access_token,<br>registration_client_uri
+
+  admin->>auth: PUT /api/v1/register/{clientId}<br>+ registrationAccessToken in Authorization header<br> + UpdateClientRequestDto
+  auth->>auth: checkAccessTokenRegistration()
+  auth->>auth: execute validation
+  auth->>auth: execute additional validation
+  auth->>auth: update client
+  auth-->>admin: 200 OK + UpdateClientResponseDto
+
+  admin-->>user: delete result
+</div>
+</section>
