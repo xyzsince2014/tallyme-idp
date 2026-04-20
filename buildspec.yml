@@ -8,10 +8,12 @@ phases:
       - aws s3 cp --recursive s3://${CONFIG_S3_BUCKET}/resource/conf/ ./app/src/profiles/production/resources/conf/
   pre_build:
     commands:
-      - cd app && ./build-war.sh production
+      - cd $CODEBUILD_SRC_DIR/app
+      - ./build-war.sh production
   build:
     commands:
-      - cd app && docker build -t ${ECR_REPO}:${VERSION} .
+      - cd $CODEBUILD_SRC_DIR/app
+      - docker build -t ${ECR_REPO}:${VERSION} .
   post_build:
     commands:
       - aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_REPO}
