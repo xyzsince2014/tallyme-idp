@@ -8,9 +8,14 @@ phases:
       - docker build -t ${ECR_REPO}:${VERSION} .
     runtime-versions:
       java: corretto8
+  pre_build:
+    commands:
+      - cd app
+      - ./build-war.sh production
   build:
     commands:
-      - docker build -t ${ECR_REPO}:${VERSION} app
+      - cd app
+      - docker build -t ${ECR_REPO}:${VERSION} .
   post_build:
     commands:
       - aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_REPO}
