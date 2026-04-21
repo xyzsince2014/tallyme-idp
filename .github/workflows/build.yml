@@ -1,12 +1,10 @@
 name: Build and Push to ECR
 
-# run on push to master branch
 on:
   push:
     branches:
       - master
 
-# 【重要】OIDCを使ってAWSと通信するために必要な権限
 permissions:
   id-token: write
   contents: read
@@ -14,6 +12,7 @@ permissions:
 env:
   AWS_REGION: ap-northeast-1
   ECR_REPOSITORY: tallyme-idp
+  CONFIG_S3_BUCKET: tallyme-idp # s3 bucket name for configuration files
 
 jobs:
   build:
@@ -28,18 +27,35 @@ jobs:
           role-to-assume: arn:aws:iam::914087091933:role/tallyme-github-actions-role
           aws-region: ${{ env.AWS_REGION }}
 
+      # set up Java 8 Corretto
+      - name: Set up JDK 8 (Corretto)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'corretto'
+
+      # fetch config files
       - name: Download config from S3
         run: |
-          aws s3 cp s3://tallyme-idp/resource/conf/ ./resource/conf/ --recursive
+          aws s3 cp s3://${{ env.CONFIG_S3_BUCKET }}/resource/conf/ ./app/src/profiles/production/resources/conf/ --recursive
+
+      # compile the WAR file
+      - name: Build WAR file
+        working-directory: ./app
+        run: |
+          chmod +x ./build-war.sh
+          ./build-war.sh production
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # build and push Docker image to ECR
       - name: Build, Tag, and Push Docker image
+        working-directory: ./app
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: latest # or ${{ github.sha }}
+          IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
