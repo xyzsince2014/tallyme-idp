@@ -14,15 +14,15 @@ public class CheckRegistrationBasicAuthService {
   private final String adminPassword;
 
   public CheckRegistrationBasicAuthService(
-      @Value("${registration.admin.username}") String adminUsername,
-      @Value("${registration.admin.password}") String adminPassword
+      @Value("${ADMIN_USERNAME}") String adminUsername,
+      @Value("${ADMIN_PASSWORD}") String adminPassword
   ) {
     this.adminUsername = adminUsername;
     this.adminPassword = adminPassword;
   }
 
   /**
-   * Validates the Basic Auth header on the client registration endpoint.
+   * Validates the Basic Auth header on the client REGISTRATION_ENDPOINT.
    * Only the admin console is authorised to register clients.
    *
    * @param authorization the value of the Authorization header

@@ -14,11 +14,10 @@ import org.springframework.session.web.http.HttpSessionIdResolver;
 
 @Configuration
 @EnableRedisHttpSession(maxInactiveIntervalInSeconds = 60 * 60) // replaces HttpSession with SpringSession
-@PropertySource("classpath:conf/session.properties")
 public class SessionConfig {
 
-  @Value("${session.redis.host}") private String host;
-  @Value("${session.redis.port}") private String port;
+  @Value("${REDIS_HOST}") private String host;
+  @Value("${REDIS_PORT}") private String port;
 
   @Bean
   public static ConfigureRedisAction configureRedisAction() {
@@ -42,7 +41,7 @@ public class SessionConfig {
     serializer.setUseSecureCookie(true);
     serializer.setUseHttpOnlyCookie(true);
     serializer.setCookieMaxAge(60 * 60);
-    serializer.setCookieName("JSESSIONID");
+    serializer.setCookieName("JSESSIONID"); // todo: make a constant
 
     // CookieHttpSessionStrategy ではなく CookieHttpSessionIdResolver を使う
     CookieHttpSessionIdResolver resolver = new CookieHttpSessionIdResolver();
