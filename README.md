@@ -32,7 +32,7 @@ cd tallyme-idp
 
 # 1. Build the WAR file
 cd ~/workspace/tallyme-idp
-./app/build-war.sh develop
+./app/war-build.sh
 
 # 2. Build Docker image (packages the WAR + Tomcat)
 ./docker-build.sh

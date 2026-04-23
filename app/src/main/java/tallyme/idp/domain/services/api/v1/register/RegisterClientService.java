@@ -29,7 +29,7 @@ public class RegisterClientService extends RegisterService {
     @Value("#{'${oauth.grant.types}'.split(',')}") String[] grantTypes,
     @Value("${oauth.token-endpoint.auth.method.default}") String tokenEndpointAuthMethodDefault,
     @Value("#{'${oauth.token-endpoint.auth.methods}'.split(',')}") String[] tokenEndpointAuthMethods,
-    @Value("${registration.endpoint}") String registrationEndpoint,
+    @Value("${REGISTRATION_ENDPOINT}") String registrationEndpoint,
     @Value("${error.invalid-client-name}") String errorInvalidClientName,
     @Value("${error.invalid-client-uri}") String errorInvalidClientUri,
     @Value("${error.invalid-redirect-uris}") String errorInvalidRedirectUris,
@@ -87,7 +87,7 @@ public class RegisterClientService extends RegisterService {
   }
 
   /**
-   * Builds the client configuration endpoint URI by concatenating the client ID to the registration endpoint.
+   * Builds the client configuration endpoint URI by concatenating the client ID to the REGISTRATION_ENDPOINT.
    * RFC 7591 §3.2: the registration client URI is the URI of the client configuration endpoint.
    *
    * @param clientId

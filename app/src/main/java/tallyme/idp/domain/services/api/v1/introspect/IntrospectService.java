@@ -39,8 +39,8 @@ public class IntrospectService {
       TokenLogic tokenLogic,
       @Value("${error.invalid-resource}") String errorInvalidResource,
       @Value("${error.no-authorization-header}") String errorNoAuthorizationHeader,
-      @Value("${domain.idp}") String domainIdp,
-      @Value("${domain.resource}") String domainResource
+      @Value("${DOMAIN_IDP}") String domainIdp,
+      @Value("${DOMAIN_RESOURCE}") String domainResource
   ) {
     this.tokenScrutinyService = tokenScrutinyService;
     this.decorder = decorder;

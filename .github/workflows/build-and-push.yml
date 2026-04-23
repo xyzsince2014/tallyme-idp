@@ -43,8 +43,8 @@ jobs:
       - name: Build WAR file
         working-directory: ./app
         run: |
-          chmod +x ./build-war.sh
-          ./build-war.sh production
+          chmod +x ./war-bulid.sh
+          ./war-bulid.sh
 
       - name: Login to Amazon ECR
         id: login-ecr
