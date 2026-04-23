@@ -28,7 +28,7 @@ public class UpdateClientService extends RegisterService {
     @Value("#{'${oauth.grant.types}'.split(',')}") String[] grantTypes,
     @Value("${oauth.token-endpoint.auth.method.default}") String tokenEndpointAuthMethodDefault,
     @Value("#{'${oauth.token-endpoint.auth.methods}'.split(',')}") String[] tokenEndpointAuthMethods,
-    @Value("${registration.endpoint}") String registrationEndpoint,
+    @Value("${REGISTRATION_ENDPOINT}") String registrationEndpoint,
     @Value("${error.invalid-client-name}") String errorInvalidClientName,
     @Value("${error.invalid-client-uri}") String errorInvalidClientUri,
     @Value("${error.invalid-redirect-uris}") String errorInvalidRedirectUris,

@@ -19,8 +19,8 @@ import tallyme.idp.domain.entities.redis.ProAuthoriseCache;
 @PropertySource("classpath:conf/redis.properties")
 public class RedisClientConfig {
 
-  @Value("${redis.jedis.host}") private String host;
-  @Value("${redis.jedis.port}") private int port;
+  @Value("${REDIS_HOST}") private String host;
+  @Value("${REDIS_PORT}") private int port;
   @Value("${redis.jedis.connectionTimeout}") private int connectionTimeout;
   @Value("${redis.jedis.soTimeout}") private int soTimeout;
 

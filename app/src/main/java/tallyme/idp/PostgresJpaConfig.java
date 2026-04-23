@@ -19,13 +19,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @PropertySource("classpath:conf/jpa.properties")
 public class PostgresJpaConfig {
 
+  @Value("${DB_HOST}") private String dbHost;
+  @Value("${DB_PORT}") private String dbPort;
+  @Value("${DB_DATABASE}") private String dbDatabase;
+  @Value("${DB_USER}") private String username;
+  @Value("${DB_PASSWORD}") private String password;
+
   @Value("${db.driver_class_name}") private String driverClassName;
-  @Value("${db.url}") private String url;
-  @Value("${db.username}") private String username;
-  @Value("${db.password}") private String password;
   @Value("${db.connect_timeout}") private int connectTimeout;
   @Value("${db.socket_timeout}") private int socketTimeout;
-
   @Value("${cp.max_total}") private int maxTotal;
   @Value("${cp.max_idle}") private int maxIdle;
   @Value("${cp.min_idle}") private int minIdle;
@@ -48,7 +50,9 @@ public class PostgresJpaConfig {
   public BasicDataSource dataSource(){
     BasicDataSource dataSource = new BasicDataSource();
     dataSource.setDriverClassName(this.driverClassName);
-    dataSource.setUrl(this.url);
+
+    String url = "jdbc:postgresql://" + this.dbHost + ":" + this.dbPort + "/" + this.dbDatabase;
+    dataSource.setUrl(url);
     dataSource.setUsername(this.username);
     dataSource.setPassword(this.password);
     dataSource.setDefaultAutoCommit(false);

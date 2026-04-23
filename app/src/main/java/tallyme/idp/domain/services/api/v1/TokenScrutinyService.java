@@ -28,8 +28,8 @@ public class TokenScrutinyService {
   @Autowired
   public TokenScrutinyService(
     RsaPublicKeyLogic rsaPublicKeyLogic,
-    @Value("${domain.idp}") String domainIdp,
-    @Value("${domain.resource}") String domainResource
+    @Value("${DOMAIN_IDP}") String domainIdp,
+    @Value("${DOMAIN_RESOURCE}") String domainResource
   ) {
     this.rsaPublicKeyLogic = rsaPublicKeyLogic;
     this.domainIdp = domainIdp;

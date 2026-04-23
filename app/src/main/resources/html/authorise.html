@@ -21,7 +21,7 @@
       <h2>Authorise the client ?</h2>
       <p>Client Name:&nbsp;<span th:text="${dto.client.clientName}"/>
       <!-- `th:action` automatically adds `<input type="hidden" name="_csrf" value="..."> to the form. -->
-      <form th:object="${authorisationForm}" th:action="@{{domain}/authorise(domain=${@environment.getProperty('domain.idp')})}" method="POST" class="form" >
+      <form th:object="${authorisationForm}" th:action="@{{domain}/authorise(domain=${@environment.getProperty('DOMAIN_IDP')})}" method="POST" class="form" >
         <input type="hidden" name="requestId" th:value="${dto.requestId}">
         <input type="hidden" name="clientUri" th:value="${dto.client.clientUri}"/>
         <div style="display: inline-block">
